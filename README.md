@@ -1,4 +1,4 @@
-# [AutoShavian]
+# AutoShavian
 
 ## 🛠️ Built by The Coding Squad
 This project is managed by the **Jules Code Team** template.
@@ -8,7 +8,7 @@ This project is managed by the **Jules Code Team** template.
 * **Latest Log:** (See `logs/STANDUP_HISTORY.md`)
 
 ## ⚡ Quick Start
-(Add your project instructions here)
+Building a local first system agnostic interface for phonetic stt and automated comversion to shavian characters.
 
 ## ⌨️ Quick Reference / Controls
 | Command | Protocol Trigger | Description |

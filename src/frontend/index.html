@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoShavian MVP</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        #controls { margin-bottom: 20px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        #status { color: #666; margin-left: 10px; }
+        .output-box { border: 1px solid #ccc; padding: 15px; margin-top: 10px; min-height: 100px; white-space: pre-wrap; }
+        h2 { margin-top: 20px; }
+        .shavian { font-family: "Segoe UI Historic", "Apple Symbols", sans-serif; font-size: 1.2em; }
+    </style>
+</head>
+<body>
+    <h1>AutoShavian</h1>
+    <p>Local-first English to Shavian transcriber.</p>
+
+    <div id="controls">
+        <button id="btn-record">Start Recording</button>
+        <button id="btn-transcribe" disabled>Transcribe</button>
+        <span id="status">Ready</span>
+    </div>
+
+    <h2>English</h2>
+    <div id="output-english" class="output-box"></div>
+
+    <h2>Shavian</h2>
+    <div id="output-shavian" class="output-box shavian"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>

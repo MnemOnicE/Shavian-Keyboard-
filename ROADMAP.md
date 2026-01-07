@@ -1,16 +1,19 @@
 # Project Roadmap
 
 ## 🚀 Active Features
-- [ ] **MVP Implementation** (Phase 1)
-    - [ ] **Backend:** Setup FastAPI + `faster-whisper`.
-    - [ ] **Logic:** Implement English -> Shavian converter.
-    - [ ] **Frontend:** Basic Web UI for recording and displaying text.
-    - [ ] **Glue:** WebSocket streaming integration.
+- [ ] **PyInstaller Packaging** (Phase 2)
+    - [ ] **Spec File:** Create `autoshavian.spec` for single-file executable.
+    - [ ] **Asset Bundling:** Ensure `src/frontend` and `faster-whisper` models are bundled correctly.
+    - [ ] **Build Script:** Create `scripts/build.sh` or `build.bat`.
 
 ## 📅 Planned
-- [ ] PyInstaller Packaging (Phase 2)
 - [ ] Custom Shavian Font Bundling
 - [ ] Settings Menu (Model Selection: Tiny/Base/Small)
 
 ## ✅ Completed
 - [x] **Architecture Decision:** Local-Server Hybrid (Sidecar).
+- [x] **MVP Implementation** (Phase 1)
+    - [x] **Backend:** Setup FastAPI + `faster-whisper`.
+    - [x] **Logic:** Implement English -> Shavian converter.
+    - [x] **Frontend:** Basic Web UI for recording and displaying text.
+    - [x] **Glue:** WebSocket streaming integration.

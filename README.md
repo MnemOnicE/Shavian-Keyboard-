@@ -4,11 +4,24 @@
 This project is managed by the **Jules Code Team** template.
 
 ## 🚦 Status
-* **Active Feature:** (See `ROADMAP.md`)
+* **Active Feature:** Phase 2 (Packaging)
 * **Latest Log:** (See `logs/STANDUP_HISTORY.md`)
 
 ## ⚡ Quick Start
 Building a local first system agnostic interface for phonetic stt and automated comversion to shavian characters.
+
+### Running Locally (Dev)
+```bash
+pip install -r requirements.txt
+python src/launcher.py
+```
+
+### Building Executable
+```bash
+pip install pyinstaller
+pyinstaller autoshavian.spec
+./dist/autoshavian
+```
 
 ## ⌨️ Quick Reference / Controls
 | Command | Protocol Trigger | Description |

@@ -57,20 +57,20 @@ async function startRecording() {
         audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
         input = audioContext.createMediaStreamSource(stream);
 
-        // Buffer size 4096, 1 input channel, 1 output channel
-        processor = audioContext.createScriptProcessor(4096, 1, 1);
+        // Load the worklet
+        await audioContext.audioWorklet.addModule('worklet_processor.js');
+        processor = new AudioWorkletNode(audioContext, 'audio-processor');
 
         input.connect(processor);
         processor.connect(audioContext.destination);
 
-        processor.onaudioprocess = (e) => {
+        processor.port.onmessage = (event) => {
             if (!isRecording) return;
-
-            const inputData = e.inputBuffer.getChannelData(0);
-
-            // Convert Float32Array to raw bytes (buffer)
-            // We can send the Float32Array directly as binary
-            ws.send(inputData.buffer);
+            const inputData = event.data;
+            // inputData is a Float32Array from the processor
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(inputData.buffer);
+            }
         };
 
         isRecording = true;

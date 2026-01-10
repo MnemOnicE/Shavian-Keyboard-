@@ -1,8 +1,24 @@
 import eng_to_ipa as ipa
 import re
+import logging
+import os
+
+# Configure logging for ShavianConverter
+logger = logging.getLogger("ShavianConverter")
+logger.setLevel(logging.WARNING)
+# Avoid adding multiple handlers if re-imported
+if not logger.handlers:
+    # We want to log to a file specifically for unknown characters
+    # Use a file handler. We'll put it in the current working directory or logs folder if available.
+    # Given the context, writing to 'unknown_ipa_chars.log' in the root is acceptable as per request.
+    file_handler = logging.FileHandler("unknown_ipa_chars.log")
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
 
 class ShavianConverter:
-    def __init__(self):
+    def __init__(self, fallback_threshold=0.5):
+        self.fallback_threshold = fallback_threshold
         # Mapping based on standard IPA to Shavian correspondence
         self.ipa_map = {
             # Consonants
@@ -79,6 +95,8 @@ class ShavianConverter:
         ipa_text = ipa_text.replace("ˈ", "").replace("ˌ", "")
 
         shavian_chars = []
+        unknown_count = 0
+        total_ipa_chars = 0
         i = 0
         while i < len(ipa_text):
             # Try to match 3 chars, then 2, then 1 (greedy match)
@@ -88,16 +106,37 @@ class ShavianConverter:
                     sub = ipa_text[i:i+length]
                     if sub in self.ipa_map:
                         match = self.ipa_map[sub]
+                        shavian_chars.append(match)
                         i += length
                         break
 
             if match:
-                shavian_chars.append(match)
+                pass # Already handled
             else:
-                # If character not found, keep it (e.g. punctuation?)
-                # or just skip. For now, let's keep it to debug
-                shavian_chars.append(ipa_text[i])
+                # If character not found, count as unknown
+                char = ipa_text[i]
+                unknown_count += 1
+                logger.warning(f"Unknown IPA character '{char}' in word '{word}' (IPA: {ipa_text})")
+
+                # Keep it as per Option B (unless threshold exceeded later)
+                shavian_chars.append(char)
                 i += 1
+
+            # We count 'total chars' as the number of 'units' processed from IPA.
+            # If we matched 3 IPA chars to 1 Shavian, is that 1 unit or 3?
+            # Usually fallback ratio should be based on input length or output validity.
+            # Let's count input characters processed.
+            # But wait, 'i' is the index. 'total_ipa_chars' should be len(ipa_text).
+            # But we only know if it's unknown inside the loop.
+            pass
+
+        total_ipa_chars = len(ipa_text)
+
+        if total_ipa_chars > 0:
+            unknown_ratio = unknown_count / total_ipa_chars
+            if unknown_ratio > self.fallback_threshold:
+                logger.warning(f"Fallback triggered for '{word}': {unknown_count}/{total_ipa_chars} unknown ({unknown_ratio:.2f} > {self.fallback_threshold})")
+                return word
 
         return "".join(shavian_chars)
 
@@ -112,8 +151,11 @@ class ShavianConverter:
             match = re.match(r"([^\w]*)([\w']+)([^\w]*)", w)
             if match:
                 pre, core, post = match.groups()
-                conv = self.convert_word(core)
-                converted.append(pre + conv + post)
+                if core:
+                    conv = self.convert_word(core)
+                    converted.append(pre + conv + post)
+                else:
+                    converted.append(w)
             else:
                 converted.append(w)
 

@@ -2,6 +2,7 @@
 
 const btnRecord = document.getElementById('btn-record');
 const btnTranscribe = document.getElementById('btn-transcribe');
+const btnClear = document.getElementById('btn-clear');
 const statusSpan = document.getElementById('status');
 const outEnglish = document.getElementById('output-english');
 const outShavian = document.getElementById('output-shavian');
@@ -77,10 +78,6 @@ async function startRecording() {
         btnTranscribe.disabled = true;
         statusSpan.innerText = "Recording...";
 
-        // Clear previous if needed?
-        // outEnglish.innerText = "";
-        // outShavian.innerText = "";
-
     } catch (err) {
         console.error("Error accessing mic:", err);
         alert("Could not access microphone");
@@ -123,6 +120,11 @@ btnRecord.onclick = () => {
 };
 
 btnTranscribe.onclick = transcribe;
+
+btnClear.onclick = () => {
+    outEnglish.innerText = "";
+    outShavian.innerText = "";
+};
 
 // Start connection
 connectWS();

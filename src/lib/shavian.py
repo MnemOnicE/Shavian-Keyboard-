@@ -107,14 +107,8 @@ class ShavianConverter:
         words = text.split(" ")
         converted = []
         for w in words:
-            # Strip punctuation for conversion, then re-attach?
-            # Ideally use a regex tokenizer.
-            # Minimal viable:
-            clean_word = re.sub(r'[^\w\s]', '', w)
-            punctuation = w[len(clean_word):] if len(clean_word) < len(w) else ""
-            prefix = w[:len(w)-len(clean_word)-len(punctuation)] if len(clean_word) < len(w) else "" # logic slightly flawed if prefix exists
-
-            # Better:
+            # Tokenization is currently split by space.
+            # We use regex to separate punctuation from the word core.
             match = re.match(r"([^\w]*)([\w']+)([^\w]*)", w)
             if match:
                 pre, core, post = match.groups()

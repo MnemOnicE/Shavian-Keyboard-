@@ -96,11 +96,7 @@ function stopRecording() {
 
     btnRecord.innerText = "Start Recording";
     btnTranscribe.disabled = false;
-    statusSpan.innerText = "Recording stopped. Ready to transcribe.";
 
-    // Auto-trigger transcribe for convenience?
-    // Let's make it manual as per button labels, or auto?
-    // "Stop" usually implies "I'm done, process it".
     transcribe();
 }
 

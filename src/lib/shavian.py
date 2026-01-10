@@ -141,25 +141,26 @@ class ShavianConverter:
         return "".join(shavian_chars)
 
     def convert_sentence(self, text):
-        # Simple tokenization by space, preserving punctuation could be improved
-        # For now, just split by space
-        words = text.split(" ")
+        # Regex to split text into words and separators.
+        # Captures words consisting of alphanumeric characters and internal apostrophes/smart quotes.
+        # This preserves all whitespace and punctuation as separate tokens.
+        parts = re.split(r"([a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*)", text)
         converted = []
-        for w in words:
-            # Tokenization is currently split by space.
-            # We use regex to separate punctuation from the word core.
-            match = re.match(r"([^\w]*)([\w']+)([^\w]*)", w)
-            if match:
-                pre, core, post = match.groups()
-                if core:
-                    conv = self.convert_word(core)
-                    converted.append(pre + conv + post)
-                else:
-                    converted.append(w)
-            else:
-                converted.append(w)
 
-        return " ".join(converted)
+        # re.split with capturing group returns [sep, match, sep, match, ...]
+        # Iterate through all parts
+        for part in parts:
+            if not part:
+                continue
+
+            # check if part matches our word definition
+            if re.match(r"^[a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*$", part):
+                converted.append(self.convert_word(part))
+            else:
+                # separator/punctuation/whitespace - keep as is
+                converted.append(part)
+
+        return "".join(converted)
 
 if __name__ == "__main__":
     converter = ShavianConverter()

@@ -1,19 +1,17 @@
-import asyncio
 import json
 import logging
+import os
 import sys
+
 import numpy as np
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from faster_whisper import WhisperModel
-from concurrent.futures import ThreadPoolExecutor
 
 # Adjust path to import local lib
-import sys
-import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from lib.shavian import ShavianConverter
+from lib.shavian import ShavianConverter  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("AutoShavian")
@@ -43,6 +41,7 @@ except Exception as e:
 
 converter = ShavianConverter()
 
+
 async def transcribe_buffer(audio_buffer: np.ndarray, websocket: WebSocket):
     if len(audio_buffer) > 0:
         logger.info(f"Transcribing {len(audio_buffer)/16000:.2f}s of audio...")
@@ -61,13 +60,14 @@ async def transcribe_buffer(audio_buffer: np.ndarray, websocket: WebSocket):
         }
         await websocket.send_json(response)
 
+
 @app.websocket("/ws/transcribe")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     logger.info("WebSocket connected")
 
     audio_buffer = np.array([], dtype=np.float32)
-    MAX_BUFFER_SAMPLES = 480000 # 30 seconds at 16kHz
+    MAX_BUFFER_SAMPLES = 480000  # 30 seconds at 16kHz
 
     try:
         while True:
@@ -82,7 +82,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 # Safety Valve: Check if buffer exceeds 30 seconds
                 if len(audio_buffer) > MAX_BUFFER_SAMPLES:
-                    logger.info("Buffer exceeded 30s. Triggering auto-transcribe safety valve.")
+                    logger.info("Buffer exceeded 30s. Triggering auto-transcribe safety valve.")  # noqa: E501
                     await transcribe_buffer(audio_buffer, websocket)
                     audio_buffer = np.array([], dtype=np.float32)
 
@@ -101,8 +101,10 @@ async def websocket_endpoint(websocket: WebSocket):
         logger.error(f"Error: {e}")
         await websocket.close()
 
+
 # Mount frontend
-app.mount("/", StaticFiles(directory="src/frontend", html=True), name="frontend")
+app.mount("/", StaticFiles(directory="src/frontend", html=True),
+          name="frontend")
 
 if __name__ == "__main__":
     import uvicorn

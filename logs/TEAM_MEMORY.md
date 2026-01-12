@@ -3,13 +3,14 @@
 ## Current Context
 **Project:** AutoShavian
 **Goal:** Local-first real-time phonetic transcription to Shavian.
-**Phase:** MVP Implementation.
+**Phase:** Packaging & Polish.
 
 ## Key Decisions
 *   **Architecture:** Sidecar Pattern (Python Backend + Web Frontend).
 *   **Engine:** `faster-whisper` (CTranslate2).
 *   **Protocol:** WebSockets.
 *   **Privacy:** Strict Local-first (No cloud STT).
+*   **Packaging:** PyInstaller `onedir` mode confirmed working.
 
 ## Active Constraints
 *   **Performance:** Must run on consumer hardware (Bolt).

@@ -8,7 +8,7 @@
     - [x] **Glue:** WebSocket streaming integration.
 
 ## 📅 Planned
-- [ ] PyInstaller Packaging (Phase 2)
+- [x] PyInstaller Packaging (Phase 2)
 - [ ] Custom Shavian Font Bundling
 - [ ] Settings Menu (Model Selection: Tiny/Base/Small)
 

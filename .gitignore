@@ -3,3 +3,6 @@ __pycache__/
 node_modules/
 template_source/node_modules/
 .hypothesis/
+build/
+dist/
+unknown_ipa_chars.log

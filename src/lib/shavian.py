@@ -1,7 +1,7 @@
-import eng_to_ipa as ipa
-import re
 import logging
-import os
+import re
+
+import eng_to_ipa as ipa
 
 # Configure logging for ShavianConverter
 logger = logging.getLogger("ShavianConverter")
@@ -9,12 +9,15 @@ logger.setLevel(logging.WARNING)
 # Avoid adding multiple handlers if re-imported
 if not logger.handlers:
     # We want to log to a file specifically for unknown characters
-    # Use a file handler. We'll put it in the current working directory or logs folder if available.
-    # Given the context, writing to 'unknown_ipa_chars.log' in the root is acceptable as per request.
+    # Use a file handler. We'll put it in the current working directory or
+    # logs folder if available.
+    # Given the context, writing to 'unknown_ipa_chars.log' in the root
+    # is acceptable as per request.
     file_handler = logging.FileHandler("unknown_ipa_chars.log")
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')  # noqa: E501
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
+
 
 class ShavianConverter:
     def __init__(self, fallback_threshold=0.5):
@@ -38,8 +41,11 @@ class ShavianConverter:
             'm': '𐑥', 'n': '𐑯',
 
             # Vowels (Short)
-            'ɪ': '𐑦', 'i': '𐑦', # approximate
-            'ɛ': '𐑧', 'e': '𐑧',
+            'ɪ': '𐑦',
+            # approximate:
+            'i': '𐑦',
+            'ɛ': '𐑧',
+            'e': '𐑧',
             'æ': '𐑨',
             'ə': '𐑩',
             'ʌ': '𐑳',
@@ -47,11 +53,14 @@ class ShavianConverter:
             'ʊ': '𐑫',
 
             # Vowels (Long/Diphthongs)
-            'iː': '𐑰', 'i': '𐑰', # Context dependent, usually final i is 𐑦 or 𐑰
+            'iː': '𐑰',
+            # Context dependent, usually final i is 𐑦 or 𐑰
+            # 'i': '𐑰', # DUPLICATE KEY REMOVED. relying on short i mapping
             'eɪ': '𐑱',
             'aɪ': '𐑲',
             'ɔɪ': '𐑶',
-            'juː': '𐑿', 'ju': '𐑿',
+            'juː': '𐑿',
+            'ju': '𐑿',
             'oʊ': '𐑴', 'əʊ': '𐑴',
             'aʊ': '𐑬',
             'uː': '𐑵', 'u': '𐑵',
@@ -61,14 +70,15 @@ class ShavianConverter:
             # R-colored vowels (approximations)
             'ɑːr': '𐑸', 'ɑr': '𐑸', 'ar': '𐑸',
             'ɔːr': '𐑹', 'ɔr': '𐑹', 'or': '𐑹',
-            'ɛər': '𐑺', 'ɛr': '𐑺', 'er': '𐑺', # air / err distinction is subtle in some IPA
+            'ɛər': '𐑺', 'ɛr': '𐑺', 'er': '𐑺',  # air / err distinction is
             'ɜːr': '𐑻', 'ɜr': '𐑻', 'ɝ': '𐑻',
             'ər': '𐑼', 'ɚ': '𐑼',
             'ɪər': '𐑽', 'ɪr': '𐑽',
-            'jʊər': '𐑿', # cure - close enough to yew?
+            'jʊər': '𐑿',  # cure - close enough to yew?
 
             # Common words (Single letters)
-            # These are handled by whole-word lookup if possible, but IPA mapping helps too
+            # These are handled by whole-word lookup if possible, but IPA
+            # mapping helps too
         }
 
         # Common word overrides (ReadLex standard)
@@ -89,7 +99,7 @@ class ShavianConverter:
         ipa_text = ipa.convert(word_lower)
 
         if "*" in ipa_text:
-            return word # Fallback if unknown
+            return word  # Fallback if unknown
 
         # Remove stress markers
         ipa_text = ipa_text.replace("ˈ", "").replace("ˌ", "")
@@ -111,23 +121,22 @@ class ShavianConverter:
                         break
 
             if match:
-                pass # Already handled
+                pass  # Already handled
             else:
                 # If character not found, count as unknown
                 char = ipa_text[i]
                 unknown_count += 1
-                logger.warning(f"Unknown IPA character '{char}' in word '{word}' (IPA: {ipa_text})")
+                logger.warning(f"Unknown IPA character '{char}' in word '{word}' (IPA: {ipa_text})")  # noqa: E501
 
                 # Keep it as per Option B (unless threshold exceeded later)
                 shavian_chars.append(char)
                 i += 1
 
-            # We count 'total chars' as the number of 'units' processed from IPA.
+            # We count 'total chars' as the number of 'units' processed
+            # from IPA.
             # If we matched 3 IPA chars to 1 Shavian, is that 1 unit or 3?
-            # Usually fallback ratio should be based on input length or output validity.
-            # Let's count input characters processed.
-            # But wait, 'i' is the index. 'total_ipa_chars' should be len(ipa_text).
-            # But we only know if it's unknown inside the loop.
+            # Usually fallback ratio should be based on input length or
+            # output validity.
             pass
 
         total_ipa_chars = len(ipa_text)
@@ -135,14 +144,15 @@ class ShavianConverter:
         if total_ipa_chars > 0:
             unknown_ratio = unknown_count / total_ipa_chars
             if unknown_ratio > self.fallback_threshold:
-                logger.warning(f"Fallback triggered for '{word}': {unknown_count}/{total_ipa_chars} unknown ({unknown_ratio:.2f} > {self.fallback_threshold})")
+                logger.warning(f"Fallback triggered for '{word}': {unknown_count}/{total_ipa_chars} unknown ({unknown_ratio:.2f} > {self.fallback_threshold})")  # noqa: E501
                 return word
 
         return "".join(shavian_chars)
 
     def convert_sentence(self, text):
         # Regex to split text into words and separators.
-        # Captures words consisting of alphanumeric characters and internal apostrophes/smart quotes.
+        # Captures words consisting of alphanumeric characters and
+        # internal apostrophes/smart quotes.
         # This preserves all whitespace and punctuation as separate tokens.
         parts = re.split(r"([a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*)", text)
         converted = []
@@ -161,6 +171,7 @@ class ShavianConverter:
                 converted.append(part)
 
         return "".join(converted)
+
 
 if __name__ == "__main__":
     converter = ShavianConverter()

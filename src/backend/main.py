@@ -12,6 +12,7 @@ from faster_whisper import WhisperModel
 # Adjust path to import local lib
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from lib.shavian import ShavianConverter  # noqa: E402
+from backend.vad import VadManager  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("AutoShavian")
@@ -54,11 +55,13 @@ async def transcribe_buffer(audio_buffer: np.ndarray, websocket: WebSocket):
         full_text = full_text.strip()
         shavian_text = converter.convert_sentence(full_text)
 
-        response = {
-            "text": full_text,
-            "shavian": shavian_text
-        }
-        await websocket.send_json(response)
+        # Only send if there is actual text
+        if full_text:
+            response = {
+                "text": full_text,
+                "shavian": shavian_text
+            }
+            await websocket.send_json(response)
 
 
 @app.websocket("/ws/transcribe")
@@ -66,8 +69,16 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     logger.info("WebSocket connected")
 
-    audio_buffer = np.array([], dtype=np.float32)
-    MAX_BUFFER_SAMPLES = 480000  # 30 seconds at 16kHz
+    # Initialize VAD Manager for this connection
+    vad_manager = VadManager()
+
+    # We remove the simple audio_buffer and rely on vad_manager,
+    # but we might need to handle the "Safety Valve" manually if vad doesn't trigger?
+    # Actually, VadManager accumulates internally.
+    # To implement the Safety Valve (force flush if too long), we can check vad_manager state.
+
+    # Since VadManager.speech_buffer is a list of arrays, we can estimate size.
+    MAX_BUFFER_FRAMES = 1000 # 1000 frames * 30ms = 30 seconds
 
     try:
         while True:
@@ -78,22 +89,32 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Append to buffer
                 # Assuming Float32 little endian raw PCM 16kHz
                 chunk = np.frombuffer(data["bytes"], dtype=np.float32)
-                audio_buffer = np.concatenate((audio_buffer, chunk))
 
-                # Safety Valve: Check if buffer exceeds 30 seconds
-                if len(audio_buffer) > MAX_BUFFER_SAMPLES:
-                    logger.info("Buffer exceeded 30s. Triggering auto-transcribe safety valve.")  # noqa: E501
-                    await transcribe_buffer(audio_buffer, websocket)
-                    audio_buffer = np.array([], dtype=np.float32)
+                # Process with VAD
+                # process_chunk returns a generator of segments
+                for segment in vad_manager.process_chunk(chunk):
+                    logger.info("VAD triggered transcription.")
+                    await transcribe_buffer(segment, websocket)
+
+                # Safety Valve: Check if internal buffer exceeds limit
+                # We check the size of the current accumulating speech buffer
+                if len(vad_manager.speech_buffer) > MAX_BUFFER_FRAMES:
+                    logger.info("Buffer exceeded 30s. Triggering auto-transcribe safety valve.")
+                    segments = vad_manager.flush()
+                    for segment in segments:
+                        await transcribe_buffer(segment, websocket)
 
             if "text" in data:
                 msg = json.loads(data["text"])
                 if msg.get("action") == "transcribe":
-                    await transcribe_buffer(audio_buffer, websocket)
-                    audio_buffer = np.array([], dtype=np.float32)
+                    # Force flush and transcribe
+                    segments = vad_manager.flush()
+                    for segment in segments:
+                        await transcribe_buffer(segment, websocket)
 
                 elif msg.get("action") == "clear":
-                    audio_buffer = np.array([], dtype=np.float32)
+                    # Flush and discard
+                    vad_manager.flush()
 
     except WebSocketDisconnect:
         logger.info("WebSocket disconnected")

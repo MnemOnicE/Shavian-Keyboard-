@@ -172,6 +172,26 @@ class ShavianConverter:
 
         return "".join(converted)
 
+    def convert_sentence_with_ipa(self, text):
+        parts = re.split(r"([a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*)", text)
+        converted_shavian = []
+        converted_ipa_parts = []
+
+        for part in parts:
+            if not part:
+                continue
+            if re.match(r"^[a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*$", part):
+                # We need the IPA text for this part
+                ipa_text = ipa.convert(part.lower())
+                # if there is fallback etc, standard eng_to_ipa returns with *
+                converted_ipa_parts.append(f"{part} [/{ipa_text}/]")
+                converted_shavian.append(self.convert_word(part))
+            else:
+                converted_ipa_parts.append(part)
+                converted_shavian.append(part)
+
+        return "".join(converted_shavian), "".join(converted_ipa_parts)
+
 
 if __name__ == "__main__":
     converter = ShavianConverter()

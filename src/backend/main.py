@@ -88,14 +88,9 @@ async def websocket_endpoint(websocket: WebSocket):
             # Receive data: can be bytes (audio) or text (commands)
             data = await websocket.receive()
 
-            if "bytes" in data and len(data["bytes"]) > MAX_PAYLOAD_SIZE:
-                logger.warning("Received binary payload exceeding "
-                               "MAX_PAYLOAD_SIZE. Closing connection.")
-                await websocket.close(code=1009)
-                break
-
-            if "text" in data and len(data["text"]) > MAX_PAYLOAD_SIZE:
-                logger.warning("Received text payload exceeding "
+            payload, payload_type = (data.get("bytes"), "binary") if "bytes" in data else (data.get("text"), "text")
+            if payload is not None and len(payload) > MAX_PAYLOAD_SIZE:
+                logger.warning(f"Received {payload_type} payload exceeding "
                                "MAX_PAYLOAD_SIZE. Closing connection.")
                 await websocket.close(code=1009)
                 break

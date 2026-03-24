@@ -1,0 +1,46 @@
+--- tests/test_websocket_payload_size.py
++++ tests/test_websocket_payload_size.py
+@@ -1,4 +1,6 @@
++import pytest
+ from fastapi.testclient import TestClient
++from starlette.websockets import WebSocketDisconnect
+ from src.backend.main import app
+
+ client = TestClient(app)
+@@ -13,12 +15,11 @@
+         # Exception should be raised when trying to send oversized
+         websocket.send_text(oversized_payload)
+
+-        try:
++        with pytest.raises(WebSocketDisconnect) as exc_info:
+             # Server should close connection with code 1009
+             data = websocket.receive()
+-            assert False, f"Expected connection close, got data: {data}"
+-        except Exception:
+-            assert True
++
++        assert exc_info.value.code == 1009
+
+
+ def test_websocket_oversized_binary_payload():
+@@ -28,12 +29,11 @@
+
+         websocket.send_bytes(oversized_payload)
+
+-        try:
++        with pytest.raises(WebSocketDisconnect) as exc_info:
+             # Server should close connection with code 1009
+             data = websocket.receive()
+-            assert False, f"Expected connection close, got data: {data}"
+-        except Exception:
+-            assert True
++
++        assert exc_info.value.code == 1009
+
+
+ def test_websocket_valid_payload():
+@@ -44,4 +44,3 @@
+         # Should not close connection immediately
+         # Valid text payload
+         websocket.send_json({"action": "clear"})
+-        assert True

@@ -140,8 +140,17 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 # Mount frontend
-app.mount("/", StaticFiles(directory="src/frontend", html=True),
-          name="frontend")
+def get_frontend_dir():
+    if getattr(sys, 'frozen', False):
+        # PyInstaller onedir mode: sys._MEIPASS or sys.executable dir
+        base_path = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+        return os.path.join(base_path, 'frontend')
+    else:
+        return os.path.join(os.path.dirname(__file__), '..', 'frontend')
+
+
+frontend_dir = get_frontend_dir()
+app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
 
 if __name__ == "__main__":
     import uvicorn

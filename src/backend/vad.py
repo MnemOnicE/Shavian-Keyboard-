@@ -45,7 +45,8 @@ class VadManager:
 
             # Convert to Int16 for WebRTC (expects 16-bit PCM mono)
             # Clipping is good practice before cast
-            pcm_frame = (np.clip(frame, -1.0, 1.0) * 32767).astype(np.int16).tobytes()  # noqa: E501
+            pcm_frame = ((np.clip(frame, -1.0, 1.0) * 32767)
+                         .astype(np.int16).tobytes())
 
             is_speech = self.vad.is_speech(pcm_frame, self.sample_rate)
 

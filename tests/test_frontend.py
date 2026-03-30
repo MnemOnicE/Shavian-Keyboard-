@@ -33,11 +33,8 @@ def test_frontend_layout(page: Page):
     page.click("#btn-translate")
 
     # Wait for websocket roundtrip
-    time.sleep(1)
+    # Wait for the websocket roundtrip and DOM update using Playwright's auto-waiting.
+    expect(page.locator("#input-english")).to_contain_text("[/həˈloʊ/]")
 
-    # Expect text to change to include IPA
-    english_val = page.locator("#input-english").input_value()
-    assert "h" in english_val
-
-    shavian_text = page.locator("#output-shavian").inner_text()
-    assert "𐑣" in shavian_text  # Check for at least one Shavian char
+    # Check for the correct Shavian translation of "Hello world"
+    expect(page.locator("#output-shavian")).to_have_text("𐑣𐑧𐑤𐑴 𐑢𐑻𐑤𐑛")

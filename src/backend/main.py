@@ -107,7 +107,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
             if "text" in data:
                 msg = json.loads(data["text"])
-                if msg.get("action") == "transcribe" or msg.get("action") == "flush":  # noqa: E501
+                if msg.get("action") in ("transcribe", "flush"):
                     # Force flush and transcribe
                     segments = vad_manager.flush()
                     for segment in segments:

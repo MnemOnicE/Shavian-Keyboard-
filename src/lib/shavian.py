@@ -177,11 +177,10 @@ class ShavianConverter:
         converted_shavian = []
         converted_ipa_parts = []
 
-        for i, part in enumerate(parts):
+        for part in parts:
             if not part:
                 continue
-            # When using re.split with a capturing group, words are at odd indices
-            if i % 2 == 1:
+            if re.match(r"^[a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*$", part):
                 # We need the IPA text for this part
                 ipa_text = ipa.convert(part.lower())
                 # if there is fallback etc, standard eng_to_ipa returns with *

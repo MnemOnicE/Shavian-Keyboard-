@@ -45,7 +45,7 @@ converter = ShavianConverter()
 
 async def transcribe_buffer(audio_buffer: np.ndarray, websocket: WebSocket):
     if len(audio_buffer) > 0:
-        logger.info(f"Transcribing {len(audio_buffer)/16000:.2f}s of audio...")
+        logger.info(f"Transcribing {len(audio_buffer)/16000:.2f}s of audio...")  # noqa: E501
         segments, info = model.transcribe(audio_buffer, beam_size=5)
 
         full_text = ""
@@ -53,13 +53,14 @@ async def transcribe_buffer(audio_buffer: np.ndarray, websocket: WebSocket):
             full_text += segment.text + " "
 
         full_text = full_text.strip()
-        shavian_text = converter.convert_sentence(full_text)
+        shavian_text, english_with_ipa = converter.convert_sentence_with_ipa(full_text)  # noqa: E501
 
         # Only send if there is actual text
         if full_text:
             response = {
                 "text": full_text,
-                "shavian": shavian_text
+                "shavian": shavian_text,
+                "english_with_ipa": english_with_ipa
             }
             await websocket.send_json(response)
 
@@ -122,7 +123,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
             if "text" in data:
                 msg = json.loads(data["text"])
-                if msg.get("action") == "transcribe":
+                if msg.get("action") in ("transcribe", "flush"):
                     # Force flush and transcribe
                     segments = vad_manager.flush()
                     for segment in segments:
@@ -131,6 +132,18 @@ async def websocket_endpoint(websocket: WebSocket):
                 elif msg.get("action") == "clear":
                     # Flush and discard
                     vad_manager.flush()
+
+                elif msg.get("action") == "translate_text":
+                    text = msg.get("text", "")
+                    if text:
+                        shavian_text, english_with_ipa = converter.convert_sentence_with_ipa(text)  # noqa: E501
+                        response = {
+                            "is_translation": True,
+                            "original_text": text,
+                            "shavian": shavian_text,
+                            "english_with_ipa": english_with_ipa
+                        }
+                        await websocket.send_json(response)
 
     except WebSocketDisconnect:
         logger.info("WebSocket disconnected")

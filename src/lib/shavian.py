@@ -20,6 +20,15 @@ if not logger.handlers:
 
 
 class ShavianConverter:
+    # Regex to split text into words and separators.
+    # Captures words consisting of alphanumeric characters and
+    # internal apostrophes/smart quotes.
+    # This preserves all whitespace and punctuation as separate tokens.
+    _WORD_SPLIT_PATTERN = re.compile(r"([a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*)")
+
+    # check if part matches our word definition
+    _WORD_MATCH_PATTERN = re.compile(r"^[a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*$")
+
     def __init__(self, fallback_threshold=0.5):
         self.fallback_threshold = fallback_threshold
         # Mapping based on standard IPA to Shavian correspondence
@@ -150,11 +159,8 @@ class ShavianConverter:
         return "".join(shavian_chars)
 
     def convert_sentence(self, text):
-        # Regex to split text into words and separators.
-        # Captures words consisting of alphanumeric characters and
-        # internal apostrophes/smart quotes.
-        # This preserves all whitespace and punctuation as separate tokens.
-        parts = re.split(r"([a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*)", text)
+        # Split text into words and separators using pre-compiled regex
+        parts = self._WORD_SPLIT_PATTERN.split(text)
         converted = []
 
         # re.split with capturing group returns [sep, match, sep, match, ...]
@@ -163,8 +169,8 @@ class ShavianConverter:
             if not part:
                 continue
 
-            # check if part matches our word definition
-            if re.match(r"^[a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*$", part):
+            # check if part matches our word definition using pre-compiled regex
+            if self._WORD_MATCH_PATTERN.match(part):
                 converted.append(self.convert_word(part))
             else:
                 # separator/punctuation/whitespace - keep as is

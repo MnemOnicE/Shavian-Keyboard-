@@ -74,17 +74,32 @@ async def websocket_endpoint(websocket: WebSocket):
     vad_manager = VadManager()
 
     # We remove the simple audio_buffer and rely on vad_manager,
-    # but we might need to handle the "Safety Valve" manually if vad doesn't trigger?  # noqa: E501
+    # but we might need to handle the "Safety Valve" manually
     # Actually, VadManager accumulates internally.
-    # To implement the Safety Valve (force flush if too long), we can check vad_manager state.  # noqa: E501
+    # To implement the Safety Valve, we check vad_manager state.
 
-    # Since VadManager.speech_buffer is a list of arrays, we can estimate size.  # noqa: E501
+    # Since VadManager.speech_buffer is a list of arrays, we can estimate size.
     MAX_BUFFER_FRAMES = 1000  # 1000 frames * 30ms = 30 seconds
+
+    # Maximum allowed payload size: 1MB
+    MAX_PAYLOAD_SIZE = 1 * 1024 * 1024
 
     try:
         while True:
             # Receive data: can be bytes (audio) or text (commands)
             data = await websocket.receive()
+
+            if "bytes" in data and len(data["bytes"]) > MAX_PAYLOAD_SIZE:
+                logger.warning("Received binary payload exceeding "
+                               "MAX_PAYLOAD_SIZE. Closing connection.")
+                await websocket.close(code=1009)
+                break
+
+            if "text" in data and len(data["text"]) > MAX_PAYLOAD_SIZE:
+                logger.warning("Received text payload exceeding "
+                               "MAX_PAYLOAD_SIZE. Closing connection.")
+                await websocket.close(code=1009)
+                break
 
             if "bytes" in data:
                 # Append to buffer
@@ -100,7 +115,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Safety Valve: Check if internal buffer exceeds limit
                 # We check the size of the current accumulating speech buffer
                 if len(vad_manager.speech_buffer) > MAX_BUFFER_FRAMES:
-                    logger.info("Buffer exceeded 30s. Triggering auto-transcribe safety valve.")  # noqa: E501
+                    logger.info("Buffer exceeded 30s. Triggering "
+                                "auto-transcribe safety valve.")
                     segments = vad_manager.flush()
                     for segment in segments:
                         await transcribe_buffer(segment, websocket)

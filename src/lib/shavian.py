@@ -54,8 +54,6 @@ class ShavianConverter:
 
             # Vowels (Long/Diphthongs)
             'iː': '𐑰',
-            # Context dependent, usually final i is 𐑦 or 𐑰
-            # 'i': '𐑰', # DUPLICATE KEY REMOVED. relying on short i mapping
             'eɪ': '𐑱',
             'aɪ': '𐑲',
             'ɔɪ': '𐑶',

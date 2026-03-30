@@ -1,12 +1,11 @@
 // Frontend Logic for AutoShavian
 
 const btnRecord = document.getElementById('btn-record');
-const btnTranslate = document.getElementById('btn-translate');
+const btnTranscribe = document.getElementById('btn-transcribe');
 const btnClear = document.getElementById('btn-clear');
 const statusSpan = document.getElementById('status');
-const inputEnglish = document.getElementById('input-english');
+const outEnglish = document.getElementById('output-english');
 const outShavian = document.getElementById('output-shavian');
-const modeToggle = document.getElementById('mic-mode-toggle');
 
 let ws;
 let audioContext;
@@ -27,34 +26,9 @@ function connectWS() {
         const data = JSON.parse(event.data);
         console.log('Received:', data);
 
-        // Check if data is from a manual translation request
-        if (data.is_translation) {
-            // Update English text with IPA append
-            const originalText = data.original_text;
-            const ipaText = data.ipa_text; // Needs to be sent by backend
-
-            // Reconstruct the English text with IPA in brackets
-            // e.g. "Hello" -> "Hello [/həˈloʊ/]"
-            // We'll replace the text in the box with the translated text if it's the exact same
-            // to avoid duplicates, or just append if it's new (for simplicity, we'll replace the exact text translated)
-            // But since the user might have modified the text box while waiting, it's safest to just update the full text.
-            inputEnglish.value = data.english_with_ipa;
-            outShavian.innerText = data.shavian;
-            statusSpan.innerText = 'Translated';
-            return;
-        }
-
-        // Otherwise, it's an automatic VAD transcription
-        const isDirectToShavian = modeToggle.checked;
-
-        if (isDirectToShavian) {
-            // Option 1 Direct Mode: Skip English box (or append to it automatically) and append Shavian directly
-            inputEnglish.value += (inputEnglish.value ? ' ' : '') + data.english_with_ipa;
-            outShavian.innerText += (outShavian.innerText ? ' ' : '') + data.shavian;
-        } else {
-            // Speech to English mode: Just append to the English box
-            inputEnglish.value += (inputEnglish.value ? ' ' : '') + data.text;
-        }
+        // Append text
+        outEnglish.innerText += (outEnglish.innerText ? ' ' : '') + data.text;
+        outShavian.innerText += (outShavian.innerText ? ' ' : '') + data.shavian;
 
         statusSpan.innerText = 'Transcribed';
     };
@@ -95,19 +69,18 @@ async function startRecording() {
             const inputData = event.data;
             // inputData is a Float32Array from the processor
             if (ws && ws.readyState === WebSocket.OPEN) {
-                // Determine mode to tell backend how to handle it?
-                // Actually backend can just stream text, we handle formatting locally.
                 ws.send(inputData.buffer);
             }
         };
 
         isRecording = true;
-        btnRecord.innerText = "Stop Mic";
+        btnRecord.innerText = "Stop Recording";
+        btnTranscribe.disabled = true;
         statusSpan.innerText = "Recording...";
 
     } catch (err) {
         console.error("Error accessing mic:", err);
-        alert("Could not access microphone. Ensure you are using http://localhost or HTTPS.");
+        alert("Could not access microphone");
     }
 }
 
@@ -121,12 +94,16 @@ function stopRecording() {
         audioContext.close();
     }
 
-    btnRecord.innerText = "Start Mic";
+    btnRecord.innerText = "Start Recording";
+    btnTranscribe.disabled = false;
 
+    transcribe();
+}
+
+function transcribe() {
     if (ws && ws.readyState === WebSocket.OPEN) {
         statusSpan.innerText = "Transcribing...";
-        // Tell backend to flush VAD buffer
-        ws.send(JSON.stringify({ action: "flush" }));
+        ws.send(JSON.stringify({ action: "transcribe" }));
     }
 }
 
@@ -138,28 +115,11 @@ btnRecord.onclick = () => {
     }
 };
 
-btnTranslate.onclick = () => {
-    const textToTranslate = inputEnglish.value.trim();
-    if (!textToTranslate) return;
-
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        statusSpan.innerText = "Translating...";
-        // Send translation request to backend
-        ws.send(JSON.stringify({
-            action: "translate_text",
-            text: textToTranslate
-        }));
-    } else {
-        alert("WebSocket not connected");
-    }
-};
+btnTranscribe.onclick = transcribe;
 
 btnClear.onclick = () => {
-    inputEnglish.value = "";
+    outEnglish.innerText = "";
     outShavian.innerText = "";
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ action: "clear" }));
-    }
 };
 
 // Start connection

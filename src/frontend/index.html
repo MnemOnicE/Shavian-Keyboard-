@@ -10,43 +10,27 @@
             src: url("fonts/NotoSansShavian-Regular.ttf") format("truetype");
         }
         body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .controls-row { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+        #controls { margin-bottom: 20px; }
         button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
         #status { color: #666; margin-left: 10px; }
-        .output-box { border: 1px solid #ccc; padding: 15px; margin-top: 10px; min-height: 100px; white-space: pre-wrap; width: 100%; box-sizing: border-box; font-size: 16px; font-family: sans-serif; resize: vertical; }
-        h2 { margin-top: 20px; margin-bottom: 5px; }
+        .output-box { border: 1px solid #ccc; padding: 15px; margin-top: 10px; min-height: 100px; white-space: pre-wrap; }
+        h2 { margin-top: 20px; }
         .shavian { font-family: "Noto Sans Shavian", "Segoe UI Historic", "Apple Symbols", sans-serif; font-size: 1.2em; }
-        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #2196F3; }
-        input:checked + .slider:before { transform: translateX(26px); }
-        .toggle-label { font-size: 14px; font-weight: bold; }
     </style>
 </head>
 <body>
     <h1>AutoShavian</h1>
     <p>Local-first English to Shavian transcriber.</p>
 
-    <div class="controls-row">
-        <button id="btn-record">Start Mic</button>
-        <span class="toggle-label">Speech to English</span>
-        <label class="switch">
-            <input type="checkbox" id="mic-mode-toggle">
-            <span class="slider"></span>
-        </label>
-        <span class="toggle-label">Direct to Shavian</span>
+    <div id="controls">
+        <button id="btn-record">Start Recording</button>
+        <button id="btn-transcribe" disabled>Transcribe</button>
+        <button id="btn-clear">Clear</button>
         <span id="status">Ready</span>
     </div>
 
     <h2>English</h2>
-    <textarea id="input-english" class="output-box" placeholder="Type plain English here, or speak into the microphone..."></textarea>
-
-    <div class="controls-row" id="secondary-controls">
-        <button id="btn-translate">Translate</button>
-        <button id="btn-clear">Clear All</button>
-    </div>
+    <div id="output-english" class="output-box"></div>
 
     <h2>Shavian</h2>
     <div id="output-shavian" class="output-box shavian"></div>

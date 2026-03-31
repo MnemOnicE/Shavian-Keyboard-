@@ -23,22 +23,31 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET"],
+    allow_headers=["Content-Type"],
 )
 
-# Initialize Model
 # usage: "tiny", "base", "small", "medium", "large"
 MODEL_SIZE = "base.en"
-logger.info(f"Loading Whisper model: {MODEL_SIZE}...")
-try:
-    # Run on CPU for broad compatibility, use "cuda" if available
-    # For MVP we default to CPU to ensure it runs everywhere without setup
-    model = WhisperModel(MODEL_SIZE, device="cpu", compute_type="int8")
-    logger.info("Model loaded successfully.")
-except Exception as e:
-    logger.error(f"Failed to load model: {e}")
-    sys.exit(1)
+_model = None
+
+
+def get_model():
+    """Lazy initialization of the Whisper model."""
+    global _model
+    if _model is None:
+        logger.info(f"Loading Whisper model: {MODEL_SIZE}...")
+        try:
+            # Run on CPU for broad compatibility, use "cuda" if available
+            # For MVP we default to CPU to ensure it runs everywhere without
+            # setup
+            _model = WhisperModel(MODEL_SIZE, device="cpu", compute_type="int8")
+            logger.info("Model loaded successfully.")
+        except Exception as e:
+            logger.error(f"Failed to load model: {e}")
+            sys.exit(1)
+    return _model
+
 
 converter = ShavianConverter()
 
@@ -46,6 +55,7 @@ converter = ShavianConverter()
 async def transcribe_buffer(audio_buffer: np.ndarray, websocket: WebSocket):
     if len(audio_buffer) > 0:
         logger.info(f"Transcribing {len(audio_buffer)/16000:.2f}s of audio...")
+        model = get_model()
         segments, info = model.transcribe(audio_buffer, beam_size=5)
 
         full_text = ""

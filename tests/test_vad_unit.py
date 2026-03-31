@@ -3,20 +3,25 @@ import os
 from unittest.mock import MagicMock, patch
 import pytest
 
-# Add src to path
-sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
-
 # Define a mock for numpy array behavior
 class MockArray(list):
     def __init__(self, data, dtype=None):
-        super().__init__(data)
+        if isinstance(data, (list, tuple, MockArray)):
+            super().__init__(list(data))
+        else:
+            # Handle scalar-like or single-item init
+            super().__init__([data])
         self.dtype = dtype
 
-def mock_concatenate(arrays):
+    def __repr__(self):
+        return f"MockArray({super().__repr__()})"
+
+def mock_concatenate(arrays, axis=0):
+    # Improved mock_concatenate to handle various sequence types and nested structures
     flat_list = []
     for a in arrays:
-        if isinstance(a, list):
-            flat_list.extend(a)
+        if isinstance(a, (list, tuple, MockArray)):
+            flat_list.extend(list(a))
         else:
             flat_list.append(a)
     return MockArray(flat_list)
@@ -24,6 +29,7 @@ def mock_concatenate(arrays):
 @pytest.fixture(autouse=True)
 def mock_deps():
     # Use patch.dict to safely mock missing modules
+    # This prevents side effects on other tests in a shared environment.
     with patch.dict(sys.modules, {
         'webrtcvad': MagicMock(),
         'numpy': MagicMock()

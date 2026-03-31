@@ -4,8 +4,3 @@ uvicorn
 faster-whisper
 websockets
 eng-to-ipa
-setuptools<70
-pytest
-hypothesis
-flake8
-httpx

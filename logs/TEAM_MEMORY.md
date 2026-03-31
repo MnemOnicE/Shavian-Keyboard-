@@ -16,8 +16,3 @@
 *   **Performance:** Must run on consumer hardware (Bolt).
 *   **Accessibility:** UI must be simple and high-contrast (Palette).
 *   **Security:** No audio logging to disk (Sentinel).
-
-## Actions Taken ([$(date +%Y-%m-%d)])
-* **Autopilot (`/auto`)**: Implemented "Custom Shavian Font Bundling" by updating `src/backend/main.py` to properly resolve the PyInstaller `frontend` path so `NotoSansShavian-Regular.ttf` is successfully mounted and served.
-* **Heal (`/heal`)**: Diagnosed and fixed broken test suite. Installed missing dependencies (via `requirements.txt` and system packages for tests: `pytest`, `hypothesis`, `flake8`). Fixed the `pkg_resources` `ModuleNotFoundError` by rolling back to `setuptools<70` (needed for `webrtcvad`). Patched broken websocket payload tests and timeout-prone backend integration tests that hung when faster-whisper omitted silence text.
-* **Reflect (`/reflect`)**: Updated `TEAM_MEMORY.md` reflecting successful `/auto` and `/heal` execution.

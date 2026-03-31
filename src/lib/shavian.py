@@ -63,8 +63,6 @@ class ShavianConverter:
 
             # Vowels (Long/Diphthongs)
             'iː': '𐑰',
-            # Context dependent, usually final i is 𐑦 or 𐑰
-            # 'i': '𐑰', # DUPLICATE KEY REMOVED. relying on short i mapping
             'eɪ': '𐑱',
             'aɪ': '𐑲',
             'ɔɪ': '𐑶',
@@ -129,9 +127,7 @@ class ShavianConverter:
                         i += length
                         break
 
-            if match:
-                pass  # Already handled
-            else:
+            if not match:
                 # If character not found, count as unknown
                 char = ipa_text[i]
                 unknown_count += 1
@@ -146,8 +142,6 @@ class ShavianConverter:
             # If we matched 3 IPA chars to 1 Shavian, is that 1 unit or 3?
             # Usually fallback ratio should be based on input length or
             # output validity.
-            pass
-
         total_ipa_chars = len(ipa_text)
 
         if total_ipa_chars > 0:
@@ -177,6 +171,27 @@ class ShavianConverter:
                 converted.append(part)
 
         return "".join(converted)
+
+    def convert_sentence_with_ipa(self, text):
+        parts = re.split(r"([a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*)", text)
+        converted_shavian = []
+        converted_ipa_parts = []
+
+        for i, part in enumerate(parts):
+            if not part:
+                continue
+            # When using re.split with a capturing group, words are at odd indices
+            if i % 2 == 1:
+                # We need the IPA text for this part
+                ipa_text = ipa.convert(part.lower())
+                # if there is fallback etc, standard eng_to_ipa returns with *
+                converted_ipa_parts.append(f"{part} [/{ipa_text}/]")
+                converted_shavian.append(self.convert_word(part))
+            else:
+                converted_ipa_parts.append(part)
+                converted_shavian.append(part)
+
+        return "".join(converted_shavian), "".join(converted_ipa_parts)
 
 
 if __name__ == "__main__":

@@ -3,8 +3,10 @@ import sys
 import os
 import re
 
-# Add src to sys.path
-sys.path.append(os.path.join(os.getcwd(), 'src'))
+# Add src and mocks to sys.path relative to this file
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
+sys.path.insert(0, os.path.join(base_dir, "src"))
+sys.path.insert(0, os.path.join(base_dir, "tests/mocks"))
 
 from lib.shavian import ShavianConverter
 

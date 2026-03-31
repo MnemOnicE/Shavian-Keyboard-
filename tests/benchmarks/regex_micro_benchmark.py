@@ -14,12 +14,12 @@ def benchmark_uncompiled(parts, iterations=100000):
     return time.time() - start
 
 def benchmark_compiled(parts, iterations=100000):
-    start = time.time()
+    start = time.perf_counter()
     for _ in range(iterations):
         for part in parts:
             if not part: continue
             COMPILED_PATTERN.match(part)
-    return time.time() - start
+    return time.perf_counter() - start
 
 if __name__ == "__main__":
     test_parts = ["Hello", "world", "it's", "a", "test", "123", "Shavian's", " ", "!", "..."]

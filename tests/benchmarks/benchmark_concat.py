@@ -20,12 +20,10 @@ if __name__ == "__main__":
     num_segments = 1000
     num_iterations = 10000
 
-    setup_code = """
-from __main__ import generate_segments, concat_loop, concat_join_list, num_segments
-    """
+    segments = list(generate_segments(num_segments))
 
-    time_loop = timeit.timeit("concat_loop(generate_segments(num_segments))", setup=setup_code, number=num_iterations)
-    time_join_list = timeit.timeit("concat_join_list(generate_segments(num_segments))", setup=setup_code, number=num_iterations)
+    time_loop = timeit.timeit(lambda: concat_loop(segments), number=num_iterations)
+    time_join_list = timeit.timeit(lambda: concat_join_list(segments), number=num_iterations)
 
     print(f"Loop concatenation: {time_loop:.4f} seconds")
     print(f"Join (list comp):   {time_join_list:.4f} seconds")

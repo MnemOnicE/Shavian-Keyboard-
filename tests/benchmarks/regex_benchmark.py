@@ -14,10 +14,10 @@ def benchmark(iterations=1000):
     converter = ShavianConverter()
     text = "The quick brown fox jumps over the lazy dog. It's a beautiful day, isn't it? 'Shavian' is a phonetic alphabet."
 
-    start_time = time.time()
+    start_time = time.perf_counter()
     for _ in range(iterations):
         converter.convert_sentence(text)
-    end_time = time.time()
+    end_time = time.perf_counter()
 
     duration = end_time - start_time
     print(f"Benchmark took {duration:.4f} seconds for {iterations} iterations.")

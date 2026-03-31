@@ -23,8 +23,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "HEAD"],
+    allow_headers=["Content-Type"],
 )
 
 # Initialize Model
@@ -45,7 +45,7 @@ converter = ShavianConverter()
 
 async def transcribe_buffer(audio_buffer: np.ndarray, websocket: WebSocket):
     if len(audio_buffer) > 0:
-        logger.info(f"Transcribing {len(audio_buffer)/16000:.2f}s of audio...")
+        logger.info(f"Transcribing {len(audio_buffer)/16000:.2f}s of audio...")  # noqa: E501
         segments, info = model.transcribe(audio_buffer, beam_size=5)
 
         full_text = ""
@@ -53,13 +53,14 @@ async def transcribe_buffer(audio_buffer: np.ndarray, websocket: WebSocket):
             full_text += segment.text + " "
 
         full_text = full_text.strip()
-        shavian_text = converter.convert_sentence(full_text)
+        shavian_text, english_with_ipa = converter.convert_sentence_with_ipa(full_text)  # noqa: E501
 
         # Only send if there is actual text
         if full_text:
             response = {
                 "text": full_text,
-                "shavian": shavian_text
+                "shavian": shavian_text,
+                "english_with_ipa": english_with_ipa
             }
             await websocket.send_json(response)
 
@@ -73,17 +74,32 @@ async def websocket_endpoint(websocket: WebSocket):
     vad_manager = VadManager()
 
     # We remove the simple audio_buffer and rely on vad_manager,
-    # but we might need to handle the "Safety Valve" manually if vad doesn't trigger?
+    # but we might need to handle the "Safety Valve" manually
     # Actually, VadManager accumulates internally.
-    # To implement the Safety Valve (force flush if too long), we can check vad_manager state.
+    # To implement the Safety Valve, we check vad_manager state.
 
     # Since VadManager.speech_buffer is a list of arrays, we can estimate size.
-    MAX_BUFFER_FRAMES = 1000 # 1000 frames * 30ms = 30 seconds
+    MAX_BUFFER_FRAMES = 1000  # 1000 frames * 30ms = 30 seconds
+
+    # Maximum allowed payload size: 1MB
+    MAX_PAYLOAD_SIZE = 1 * 1024 * 1024
 
     try:
         while True:
             # Receive data: can be bytes (audio) or text (commands)
             data = await websocket.receive()
+
+            if "bytes" in data and len(data["bytes"]) > MAX_PAYLOAD_SIZE:
+                logger.warning("Received binary payload exceeding "
+                               "MAX_PAYLOAD_SIZE. Closing connection.")
+                await websocket.close(code=1009)
+                break
+
+            if "text" in data and len(data["text"]) > MAX_PAYLOAD_SIZE:
+                logger.warning("Received text payload exceeding "
+                               "MAX_PAYLOAD_SIZE. Closing connection.")
+                await websocket.close(code=1009)
+                break
 
             if "bytes" in data:
                 # Append to buffer
@@ -99,14 +115,15 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Safety Valve: Check if internal buffer exceeds limit
                 # We check the size of the current accumulating speech buffer
                 if len(vad_manager.speech_buffer) > MAX_BUFFER_FRAMES:
-                    logger.info("Buffer exceeded 30s. Triggering auto-transcribe safety valve.")
+                    logger.info("Buffer exceeded 30s. Triggering "
+                                "auto-transcribe safety valve.")
                     segments = vad_manager.flush()
                     for segment in segments:
                         await transcribe_buffer(segment, websocket)
 
             if "text" in data:
                 msg = json.loads(data["text"])
-                if msg.get("action") == "transcribe":
+                if msg.get("action") in ("transcribe", "flush"):
                     # Force flush and transcribe
                     segments = vad_manager.flush()
                     for segment in segments:
@@ -116,6 +133,18 @@ async def websocket_endpoint(websocket: WebSocket):
                     # Flush and discard
                     vad_manager.flush()
 
+                elif msg.get("action") == "translate_text":
+                    text = msg.get("text", "")
+                    if text:
+                        shavian_text, english_with_ipa = converter.convert_sentence_with_ipa(text)  # noqa: E501
+                        response = {
+                            "is_translation": True,
+                            "original_text": text,
+                            "shavian": shavian_text,
+                            "english_with_ipa": english_with_ipa
+                        }
+                        await websocket.send_json(response)
+
     except WebSocketDisconnect:
         logger.info("WebSocket disconnected")
     except Exception as e:
@@ -124,8 +153,17 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 # Mount frontend
-app.mount("/", StaticFiles(directory="src/frontend", html=True),
-          name="frontend")
+def get_frontend_dir():
+    if getattr(sys, 'frozen', False):
+        # PyInstaller onedir mode: sys._MEIPASS or sys.executable dir
+        base_path = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+        return os.path.join(base_path, 'frontend')
+    else:
+        return os.path.join(os.path.dirname(__file__), '..', 'frontend')
+
+
+frontend_dir = get_frontend_dir()
+app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
 
 if __name__ == "__main__":
     import uvicorn

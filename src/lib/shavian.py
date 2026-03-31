@@ -118,9 +118,7 @@ class ShavianConverter:
                         i += length
                         break
 
-            if match:
-                pass  # Already handled
-            else:
+            if not match:
                 # If character not found, count as unknown
                 char = ipa_text[i]
                 unknown_count += 1
@@ -135,8 +133,6 @@ class ShavianConverter:
             # If we matched 3 IPA chars to 1 Shavian, is that 1 unit or 3?
             # Usually fallback ratio should be based on input length or
             # output validity.
-            pass
-
         total_ipa_chars = len(ipa_text)
 
         if total_ipa_chars > 0:

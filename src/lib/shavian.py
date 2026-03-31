@@ -20,6 +20,15 @@ if not logger.handlers:
 
 
 class ShavianConverter:
+    # Regex to split text into words and separators.
+    # Captures words consisting of alphanumeric characters and
+    # internal apostrophes/smart quotes.
+    # This preserves all whitespace and punctuation as separate tokens.
+    _WORD_SPLIT_PATTERN = re.compile(r"([a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*)")
+
+    # check if part matches our word definition
+    _WORD_MATCH_PATTERN = re.compile(r"^[a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*$")
+
     def __init__(self, fallback_threshold=0.5):
         self.fallback_threshold = fallback_threshold
         # Mapping based on standard IPA to Shavian correspondence
@@ -54,8 +63,6 @@ class ShavianConverter:
 
             # Vowels (Long/Diphthongs)
             'iː': '𐑰',
-            # Context dependent, usually final i is 𐑦 or 𐑰
-            # 'i': '𐑰', # DUPLICATE KEY REMOVED. relying on short i mapping
             'eɪ': '𐑱',
             'aɪ': '𐑲',
             'ɔɪ': '𐑶',
@@ -120,9 +127,7 @@ class ShavianConverter:
                         i += length
                         break
 
-            if match:
-                pass  # Already handled
-            else:
+            if not match:
                 # If character not found, count as unknown
                 char = ipa_text[i]
                 unknown_count += 1
@@ -137,8 +142,6 @@ class ShavianConverter:
             # If we matched 3 IPA chars to 1 Shavian, is that 1 unit or 3?
             # Usually fallback ratio should be based on input length or
             # output validity.
-            pass
-
         total_ipa_chars = len(ipa_text)
 
         if total_ipa_chars > 0:
@@ -150,11 +153,8 @@ class ShavianConverter:
         return "".join(shavian_chars)
 
     def convert_sentence(self, text):
-        # Regex to split text into words and separators.
-        # Captures words consisting of alphanumeric characters and
-        # internal apostrophes/smart quotes.
-        # This preserves all whitespace and punctuation as separate tokens.
-        parts = re.split(r"([a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*)", text)
+        # Split text into words and separators using pre-compiled regex
+        parts = self._WORD_SPLIT_PATTERN.split(text)
         converted = []
 
         # re.split with capturing group returns [sep, match, sep, match, ...]
@@ -163,14 +163,35 @@ class ShavianConverter:
             if not part:
                 continue
 
-            # check if part matches our word definition
-            if re.match(r"^[a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*$", part):
+            # check if part matches our word definition using pre-compiled regex
+            if self._WORD_MATCH_PATTERN.match(part):
                 converted.append(self.convert_word(part))
             else:
                 # separator/punctuation/whitespace - keep as is
                 converted.append(part)
 
         return "".join(converted)
+
+    def convert_sentence_with_ipa(self, text):
+        parts = re.split(r"([a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*)", text)
+        converted_shavian = []
+        converted_ipa_parts = []
+
+        for i, part in enumerate(parts):
+            if not part:
+                continue
+            # When using re.split with a capturing group, words are at odd indices
+            if i % 2 == 1:
+                # We need the IPA text for this part
+                ipa_text = ipa.convert(part.lower())
+                # if there is fallback etc, standard eng_to_ipa returns with *
+                converted_ipa_parts.append(f"{part} [/{ipa_text}/]")
+                converted_shavian.append(self.convert_word(part))
+            else:
+                converted_ipa_parts.append(part)
+                converted_shavian.append(part)
+
+        return "".join(converted_shavian), "".join(converted_ipa_parts)
 
 
 if __name__ == "__main__":

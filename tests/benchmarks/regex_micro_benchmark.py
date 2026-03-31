@@ -6,12 +6,12 @@ PATTERN = r"^[a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*$"
 COMPILED_PATTERN = re.compile(PATTERN)
 
 def benchmark_uncompiled(parts, iterations=100000):
-    start = time.time()
+    start = time.perf_counter()
     for _ in range(iterations):
         for part in parts:
             if not part: continue
             re.match(PATTERN, part)
-    return time.time() - start
+    return time.perf_counter() - start
 
 def benchmark_compiled(parts, iterations=100000):
     start = time.perf_counter()

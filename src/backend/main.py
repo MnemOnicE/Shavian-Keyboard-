@@ -10,9 +10,9 @@ from fastapi.staticfiles import StaticFiles
 from faster_whisper import WhisperModel
 
 # Adjust path to import local lib
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from lib.shavian import ShavianConverter  # noqa: E402
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from backend.vad import VadManager  # noqa: E402
+from lib.shavian import ShavianConverter  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("AutoShavian")
@@ -24,7 +24,7 @@ app.add_middleware(
     allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"],
     allow_credentials=True,
     allow_methods=["GET"],
-    allow_methods=["GET", "HEAD"],
+
     allow_headers=["Content-Type"],
 )
 
@@ -42,7 +42,7 @@ def get_model():
             # Run on CPU for broad compatibility, use "cuda" if available
             # For MVP we default to CPU to ensure it runs everywhere without
             # setup
-            _model = WhisperModel(MODEL_SIZE, device="cpu", compute_type="int8")
+            _model = WhisperModel(MODEL_SIZE, device="cpu", compute_type="int8")  # noqa: E501
             logger.info("Model loaded successfully.")
         except Exception as e:
             logger.error(f"Failed to load model: {e}")
@@ -57,7 +57,9 @@ async def transcribe_buffer(audio_buffer: np.ndarray, websocket: WebSocket):
     if len(audio_buffer) > 0:
         logger.info(f"Transcribing {len(audio_buffer)/16000:.2f}s of audio...")
         model = get_model()
-        logger.info(f"Transcribing {len(audio_buffer)/16000:.2f}s of audio...")  # noqa: E501
+        logger.info(
+            f"Transcribing {len(audio_buffer)/16000:.2f}s of audio..."
+        )  # noqa: E501
         segments, info = model.transcribe(audio_buffer, beam_size=5)
 
         full_text = ""
@@ -65,14 +67,16 @@ async def transcribe_buffer(audio_buffer: np.ndarray, websocket: WebSocket):
             full_text += segment.text + " "
 
         full_text = full_text.strip()
-        shavian_text, english_with_ipa = converter.convert_sentence_with_ipa(full_text)  # noqa: E501
+        shavian_text, english_with_ipa = converter.convert_sentence_with_ipa(
+            full_text
+        )  # noqa: E501
 
         # Only send if there is actual text
         if full_text:
             response = {
                 "text": full_text,
                 "shavian": shavian_text,
-                "english_with_ipa": english_with_ipa
+                "english_with_ipa": english_with_ipa,
             }
             await websocket.send_json(response)
 
@@ -102,14 +106,18 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive()
 
             if "bytes" in data and len(data["bytes"]) > MAX_PAYLOAD_SIZE:
-                logger.warning("Received binary payload exceeding "
-                               "MAX_PAYLOAD_SIZE. Closing connection.")
+                logger.warning(
+                    "Received binary payload exceeding "
+                    "MAX_PAYLOAD_SIZE. Closing connection."
+                )
                 await websocket.close(code=1009)
                 break
 
             if "text" in data and len(data["text"]) > MAX_PAYLOAD_SIZE:
-                logger.warning("Received text payload exceeding "
-                               "MAX_PAYLOAD_SIZE. Closing connection.")
+                logger.warning(
+                    "Received text payload exceeding "
+                    "MAX_PAYLOAD_SIZE. Closing connection."
+                )
                 await websocket.close(code=1009)
                 break
 
@@ -127,8 +135,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Safety Valve: Check if internal buffer exceeds limit
                 # We check the size of the current accumulating speech buffer
                 if len(vad_manager.speech_buffer) > MAX_BUFFER_FRAMES:
-                    logger.info("Buffer exceeded 30s. Triggering "
-                                "auto-transcribe safety valve.")
+                    logger.info(
+                        "Buffer exceeded 30s. Triggering "
+                        "auto-transcribe safety valve."
+                    )
                     segments = vad_manager.flush()
                     for segment in segments:
                         await transcribe_buffer(segment, websocket)
@@ -148,12 +158,14 @@ async def websocket_endpoint(websocket: WebSocket):
                 elif msg.get("action") == "translate_text":
                     text = msg.get("text", "")
                     if text:
-                        shavian_text, english_with_ipa = converter.convert_sentence_with_ipa(text)  # noqa: E501
+                        shavian_text, english_with_ipa = (
+                            converter.convert_sentence_with_ipa(text)
+                        )  # noqa: E501
                         response = {
                             "is_translation": True,
                             "original_text": text,
                             "shavian": shavian_text,
-                            "english_with_ipa": english_with_ipa
+                            "english_with_ipa": english_with_ipa,
                         }
                         await websocket.send_json(response)
 
@@ -166,12 +178,12 @@ async def websocket_endpoint(websocket: WebSocket):
 
 # Mount frontend
 def get_frontend_dir():
-    if getattr(sys, 'frozen', False):
+    if getattr(sys, "frozen", False):
         # PyInstaller onedir mode: sys._MEIPASS or sys.executable dir
-        base_path = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
-        return os.path.join(base_path, 'frontend')
+        base_path = getattr(sys, "_MEIPASS", os.path.dirname(sys.executable))
+        return os.path.join(base_path, "frontend")
     else:
-        return os.path.join(os.path.dirname(__file__), '..', 'frontend')
+        return os.path.join(os.path.dirname(__file__), "..", "frontend")
 
 
 frontend_dir = get_frontend_dir()
@@ -179,4 +191,5 @@ app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

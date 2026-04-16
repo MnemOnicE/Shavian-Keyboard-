@@ -30,9 +30,6 @@ with patch.dict(sys.modules, mock_modules):
             self.data = data
         def __len__(self):
             return len(self.data)
-        def __truediv__(self, other):
-            # Support len(audio_buffer)/16000 calculation in logger
-            return len(self.data) / other
 
     np.ndarray = MockNdArray
 

@@ -62,11 +62,7 @@ async def transcribe_buffer(audio_buffer: np.ndarray, websocket: WebSocket):
         )  # noqa: E501
         segments, info = model.transcribe(audio_buffer, beam_size=5)
 
-        full_text = ""
-        for segment in segments:
-            full_text += segment.text + " "
-
-        full_text = full_text.strip()
+        full_text = " ".join(segment.text for segment in segments).strip()
         shavian_text, english_with_ipa = converter.convert_sentence_with_ipa(
             full_text
         )  # noqa: E501

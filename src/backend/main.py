@@ -44,8 +44,8 @@ def get_model():
             # setup
             _model = WhisperModel(MODEL_SIZE, device="cpu", compute_type="int8")
             logger.info("Model loaded successfully.")
-        except Exception as e:
-            logger.error(f"Failed to load model: {e}")
+        except Exception:
+            logger.error("Failed to load model due to an internal error.")
             sys.exit(1)
     return _model
 
@@ -159,8 +159,8 @@ async def websocket_endpoint(websocket: WebSocket):
 
     except WebSocketDisconnect:
         logger.info("WebSocket disconnected")
-    except Exception as e:
-        logger.error(f"Error: {e}")
+    except Exception:
+        logger.error("Internal server error occurred in WebSocket endpoint")
         await websocket.close()
 
 

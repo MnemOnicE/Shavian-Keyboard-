@@ -43,8 +43,8 @@ def get_model():
             # setup
             _model = WhisperModel(MODEL_SIZE, device="cpu", compute_type="int8")  # noqa: E501
             logger.info("Model loaded successfully.")
-        except Exception:
-            logger.error("Failed to load model due to an internal error.")
+        except Exception as e:
+            logger.error(f"Failed to load model due to an internal error: {type(e).__name__}")
             sys.exit(1)
     return _model
 

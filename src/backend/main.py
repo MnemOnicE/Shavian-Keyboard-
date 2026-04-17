@@ -65,7 +65,7 @@ async def transcribe_buffer(audio_buffer: np.ndarray, websocket: WebSocket):
         full_text = " ".join([segment.text for segment in segments]).strip()
         shavian_text, english_with_ipa = converter.convert_sentence_with_ipa(
             full_text
-        )  # noqa: E501
+        )
 
         # Only send if there is actual text
         if full_text:

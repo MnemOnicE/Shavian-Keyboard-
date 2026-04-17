@@ -1,12 +1,16 @@
-from playwright.sync_api import Page, expect
 import threading
-import uvicorn
-import pytest
-from src.backend.main import app
 import time
+
+import pytest
+import uvicorn
+from playwright.sync_api import Page, expect
+
+from src.backend.main import app
+
 
 def run_server():
     uvicorn.run(app, host="127.0.0.1", port=8000, log_level="error")
+
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_server():
@@ -14,6 +18,7 @@ def setup_server():
     server_thread.start()
     time.sleep(2)  # Wait for server to start
     yield
+
 
 def test_frontend_layout(page: Page):
     page.goto("http://127.0.0.1:8000/")
@@ -33,7 +38,7 @@ def test_frontend_layout(page: Page):
     page.click("#btn-translate")
 
     # Wait for websocket roundtrip
-    # Wait for the websocket roundtrip and DOM update using Playwright's auto-waiting.
+    # Wait for the websocket roundtrip and DOM update using Playwright's auto-waiting.  # noqa: E501
     expect(page.locator("#input-english")).to_contain_text("[/həˈloʊ/]")
 
     # Check for the correct Shavian translation of "Hello world"

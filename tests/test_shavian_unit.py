@@ -1,8 +1,11 @@
-import sys
 import os
-import pytest
-sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
-from lib.shavian import ShavianConverter
+import sys
+
+# import pytest
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "../src"))
+from lib.shavian import ShavianConverter  # noqa: E402
+
 
 def test_convert_word_simple():
     converter = ShavianConverter()
@@ -12,6 +15,7 @@ def test_convert_word_simple():
     # "test" -> t ɛ s t -> 𐑑 𐑧 𐑕 𐑑
     assert converter.convert_word("test") == "𐑑𐑧𐑕𐑑"
 
+
 def test_convert_sentence():
     converter = ShavianConverter()
     # "Hello world"
@@ -19,8 +23,8 @@ def test_convert_sentence():
     # world -> w ɜr l d -> 𐑢 𐑻 𐑤 𐑛 (approx)
     result = converter.convert_sentence("Hello world")
     # We check parts because exact IPA mapping can vary
-    assert "𐑣" in result # h
-    assert "𐑢" in result # w
+    assert "𐑣" in result  # h
+    assert "𐑢" in result  # w
 
     # Check punctuation preservation
     text = "Hello, world!"
@@ -28,6 +32,7 @@ def test_convert_sentence():
     assert "," in result
     assert "!" in result
     assert " " in result
+
 
 def test_fallback():
     converter = ShavianConverter()
@@ -41,8 +46,9 @@ def test_fallback():
     # The converter should return original text
     assert converter.convert_word(weird) == weird
 
+
 def test_casing_preservation_in_sentence():
-    # The converter currently converts words to lowercase before lookup/conversion.
+    # The converter currently converts words to lowercase before lookup/conversion.  # noqa: E501
     # The output is Shavian characters which don't have casing (unicameral).
     # But punctuation and whitespace should be preserved.
     converter = ShavianConverter()

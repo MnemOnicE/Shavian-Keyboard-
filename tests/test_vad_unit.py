@@ -1,16 +1,19 @@
-import sys
 import os
+import sys
 from unittest.mock import MagicMock, patch
+
 import pytest
 
 # Add src to path
-sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../src"))
+
 
 # Define a mock for numpy array behavior
 class MockArray(list):
     def __init__(self, data, dtype=None):
         super().__init__(data)
         self.dtype = dtype
+
 
 def mock_concatenate(arrays):
     flat_list = []
@@ -21,14 +24,13 @@ def mock_concatenate(arrays):
             flat_list.append(a)
     return MockArray(flat_list)
 
+
 @pytest.fixture(autouse=True)
 def mock_deps():
     # Use patch.dict to safely mock missing modules
-    with patch.dict(sys.modules, {
-        'webrtcvad': MagicMock(),
-        'numpy': MagicMock()
-    }):
+    with patch.dict(sys.modules, {"webrtcvad": MagicMock(), "numpy": MagicMock()}):  # noqa: E501
         import numpy as np
+
         np.float32 = "float32"
         # Setup the mock for array to use our helper
         np.array.side_effect = lambda data, dtype=None: MockArray(data, dtype)
@@ -36,7 +38,9 @@ def mock_deps():
 
         # Now import VadManager after mocks are applied
         from backend.vad import VadManager
+
         yield VadManager
+
 
 def test_flush_initial_state(mock_deps):
     vm = mock_deps()
@@ -49,6 +53,7 @@ def test_flush_initial_state(mock_deps):
     assert vm.consecutive_speech == 0
     assert vm.consecutive_silence == 0
 
+
 def test_flush_triggered_with_speech(mock_deps):
     vm = mock_deps()
     vm.triggered = True
@@ -57,7 +62,7 @@ def test_flush_triggered_with_speech(mock_deps):
     results = vm.flush()
 
     assert len(results) == 1
-    assert results[0] == [1, 2, 3, 4]
+    assert list(results[0]) == [1, 2, 3, 4]
 
     assert vm.triggered is False
     assert vm.speech_buffer == []
@@ -65,6 +70,7 @@ def test_flush_triggered_with_speech(mock_deps):
     assert len(vm.buffer) == 0
     assert vm.consecutive_speech == 0
     assert vm.consecutive_silence == 0
+
 
 def test_flush_not_triggered_with_speech(mock_deps):
     vm = mock_deps()
@@ -78,6 +84,7 @@ def test_flush_not_triggered_with_speech(mock_deps):
     assert vm.triggered is False
     assert vm.speech_buffer == []
     assert vm.consecutive_speech == 0
+
 
 def test_flush_resets_all_state_variables(mock_deps):
     vm = mock_deps()

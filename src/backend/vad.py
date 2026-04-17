@@ -1,6 +1,7 @@
-import webrtcvad
-import numpy as np
 import collections
+
+import numpy as np
+import webrtcvad
 
 
 class VadManager:
@@ -9,6 +10,7 @@ class VadManager:
     Accepts Float32 audio, converts to Int16 for processing,
     and returns segmented audio chunks when speech ends.
     """
+
     def __init__(self, sample_rate=16000, frame_duration_ms=30, mode=2):
         self.vad = webrtcvad.Vad(mode)
         self.sample_rate = sample_rate
@@ -23,8 +25,8 @@ class VadManager:
         self.consecutive_speech = 0
         self.consecutive_silence = 0
         # Parameters
-        self.SPEECH_START_FRAMES = 5   # ~150ms of speech to trigger start
-        self.SILENCE_END_FRAMES = 20   # ~600ms of silence to trigger end
+        self.SPEECH_START_FRAMES = 5  # ~150ms of speech to trigger start
+        self.SILENCE_END_FRAMES = 20  # ~600ms of silence to trigger end
 
     def process_chunk(self, chunk: np.ndarray):
         """
@@ -34,12 +36,12 @@ class VadManager:
         self.buffer = np.concatenate((self.buffer, chunk))
         while len(self.buffer) >= self.frame_length:
             # Extract one frame
-            frame = self.buffer[:self.frame_length]
+            frame = self.buffer[: self.frame_length]
             self.buffer = self.buffer[self.frame_length:]
             # Convert to Int16 for WebRTC (expects 16-bit PCM mono)
             # Clipping is good practice before cast
-            pcm_frame = ((np.clip(frame, -1.0, 1.0) * 32767)
-                         .astype(np.int16).tobytes())
+            pcm_frame = (np.clip(frame, -1.0, 1.0) * 32767).astype(np.int16).tobytes()  # noqa: E501
+
             is_speech = self.vad.is_speech(pcm_frame, self.sample_rate)
             if is_speech:
                 self.consecutive_silence = 0

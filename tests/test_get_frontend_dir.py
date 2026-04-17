@@ -6,24 +6,20 @@ from unittest.mock import MagicMock, patch
 # Add src to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
 
-# Mock all dependencies of backend.main to avoid import issues
-# The mock modules must be in sys.modules before importing backend.main
-mock_modules = [
-    'fastapi',
-    'fastapi.middleware.cors',
-    'fastapi.staticfiles',
-    'faster_whisper',
-    'webrtcvad',
-    'numpy'
-]
-for mod in mock_modules:
-    sys.modules[mod] = MagicMock()
+# Mock dependencies to avoid import issues during testing
+mock_deps = {
+    'fastapi': MagicMock(),
+    'fastapi.middleware.cors': MagicMock(),
+    'fastapi.staticfiles': MagicMock(),
+    'faster_whisper': MagicMock(),
+    'webrtcvad': MagicMock(),
+    'numpy': MagicMock(),
+    'lib.shavian': MagicMock(),
+    'backend.vad': MagicMock()
+}
 
-# Mock local imports
-sys.modules['lib.shavian'] = MagicMock()
-sys.modules['backend.vad'] = MagicMock()
-
-from backend.main import get_frontend_dir
+with patch.dict('sys.modules', mock_deps):
+    from backend.main import get_frontend_dir
 
 class TestGetFrontendDir(unittest.TestCase):
     def setUp(self):

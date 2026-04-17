@@ -30,9 +30,6 @@ function connectWS() {
         // Check if data is from a manual translation request
         if (data.is_translation) {
             // Update English text with IPA append
-            const originalText = data.original_text;
-            const ipaText = data.ipa_text; // Needs to be sent by backend
-
             // Reconstruct the English text with IPA in brackets
             // e.g. "Hello" -> "Hello [/həˈloʊ/]"
             // We'll replace the text in the box with the translated text if it's the exact same

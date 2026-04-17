@@ -156,7 +156,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     if text:
                         shavian_text, english_with_ipa = (
                             converter.convert_sentence_with_ipa(text)
-                        )  # noqa: E501
+                        )
                         response = {
                             "is_translation": True,
                             "original_text": text,

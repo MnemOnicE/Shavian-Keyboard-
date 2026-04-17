@@ -164,9 +164,9 @@ async def websocket_endpoint(websocket: WebSocket):
 
     except WebSocketDisconnect:
         logger.info("WebSocket disconnected")
-    except Exception:
-        logger.error("Internal server error occurred in WebSocket endpoint")
-        await websocket.close()
+    except Exception as e:
+        logger.error(f"Internal server error occurred in WebSocket endpoint: {type(e).__name__}")
+        await websocket.close(code=1011)
 
 
 # Mount frontend

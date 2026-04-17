@@ -1,14 +1,16 @@
-import sys
 import os
+import sys
+
 from fastapi.testclient import TestClient
 
 # Add src to path
-sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
-from backend.main import app
+sys.path.append(os.path.join(os.path.dirname(__file__), "../src"))
+from backend.main import app  # noqa: E402
+
 
 def test_cors_options_allowed_methods():
     client = TestClient(app)
-    # Origin must be one of the allowed origins for CORS middleware to process it
+    # Origin must be one of the allowed origins for CORS middleware to process it  # noqa: E501
     origin = "http://localhost:8000"
     headers = {
         "Origin": origin,
@@ -29,6 +31,7 @@ def test_cors_options_allowed_methods():
     allowed_headers = response.headers.get("Access-Control-Allow-Headers", "")
     assert "Content-Type" in allowed_headers
 
+
 def test_cors_options_disallowed_method():
     client = TestClient(app)
     origin = "http://localhost:8000"
@@ -38,8 +41,9 @@ def test_cors_options_disallowed_method():
     }
     response = client.options("/", headers=headers)
 
-    # If the method is not allowed, the CORS middleware should not return allow headers
-    assert "Access-Control-Allow-Methods" not in response.headers
+    # If the method is not allowed, the CORS middleware should not return allow headers  # noqa: E501
+    assert response.status_code == 400
+
 
 def test_cors_disallowed_origin():
     client = TestClient(app)

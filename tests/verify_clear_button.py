@@ -1,5 +1,7 @@
 import os
-from playwright.sync_api import sync_playwright, expect
+
+from playwright.sync_api import expect, sync_playwright
+
 
 def verify_clear_button():
     with sync_playwright() as p:
@@ -18,6 +20,7 @@ def verify_clear_button():
         page.screenshot(path="verification/clear_button.png")
 
         browser.close()
+
 
 if __name__ == "__main__":
     verify_clear_button()

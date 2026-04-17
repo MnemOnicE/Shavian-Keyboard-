@@ -1,13 +1,15 @@
 import os
 import shutil
-import tempfile
 import subprocess
+import tempfile
+
 import pytest
+
 
 @pytest.fixture
 def scaffold_template():
     """
-    Fixture to create a temporary directory and copy the template_source into it.
+    Fixture to create a temporary directory and copy the template_source into it.  # noqa: E501
     Returns the path to the temporary directory.
     """
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -19,9 +21,10 @@ def scaffold_template():
         shutil.copytree(source, destination)
         yield destination
 
+
 def test_directory_structure(scaffold_template):
     """
-    Test that the critical directories and files exist in the scaffolded project.
+    Test that the critical directories and files exist in the scaffolded project.  # noqa: E501
     """
     expected_paths = [
         ".agents",
@@ -30,18 +33,19 @@ def test_directory_structure(scaffold_template):
         ".agents/workflows",
         ".agents/COMMANDS.md",
         ".agents/MANIFEST.md",
-        "README.md"
+        "README.md",
     ]
 
     for path in expected_paths:
         full_path = os.path.join(scaffold_template, path)
-        assert os.path.exists(full_path), f"Expected path {path} not found in scaffold."
+        assert os.path.exists(full_path), f"Expected path {path} not found in scaffold."  # noqa: E501
+
 
 def test_script_execution(scaffold_template):
     """
     Test that we can run a script in the new context.
     We use a mock script to ensure we are testing the environment capability,
-    not the stability of the actual 'generate_v3_data.js' which has known historical issues.
+    not the stability of the actual 'generate_v3_data.js' which has known historical issues.  # noqa: E501
     """
     temp_root = os.path.dirname(scaffold_template)
     scripts_dir = os.path.join(temp_root, "scripts")
@@ -58,17 +62,14 @@ def test_script_execution(scaffold_template):
 
     # Run node script
     result = subprocess.run(
-        ["node", mock_script_path],
-        capture_output=True,
-        text=True,
-        cwd=temp_root
+        ["node", mock_script_path], capture_output=True, text=True, cwd=temp_root  # noqa: E501
     )
 
     assert result.returncode == 0, f"Script failed: {result.stderr}"
     assert "V3 Environment Ready" in result.stdout
 
     # Verify artifacts
-    benchmarks_path = os.path.join(temp_root, "tests", "benchmarks", "speed_log.json")
+    benchmarks_path = os.path.join(temp_root, "tests", "benchmarks", "speed_log.json")  # noqa: E501
     assert os.path.exists(benchmarks_path), "Mock artifact not generated"
 
 
@@ -80,13 +81,12 @@ def test_template_internal_tests(scaffold_template):
     # We want to ensure 'pytest' can discover and run it inside the scaffold.
 
     result = subprocess.run(
-        ["pytest", "tests"],
-        capture_output=True,
-        text=True,
-        cwd=scaffold_template
+        ["pytest", "tests"], capture_output=True, text=True, cwd=scaffold_template  # noqa: E501
     )
 
-    assert result.returncode == 0, f"Internal template tests failed:\n{result.stdout}\n{result.stderr}"
+    assert (
+        result.returncode == 0
+    ), f"Internal template tests failed:\n{result.stdout}\n{result.stderr}"
     assert "passed" in result.stdout
 
 
@@ -109,4 +109,4 @@ def test_template_file_sizes(scaffold_template):
             if size > max_size:
                 oversized_files.append(f"{file} ({size / 1024:.2f} KB)")
 
-    assert not oversized_files, f"Found files exceeding 1MB limit: {oversized_files}"
+    assert not oversized_files, f"Found files exceeding 1MB limit: {oversized_files}"  # noqa: E501

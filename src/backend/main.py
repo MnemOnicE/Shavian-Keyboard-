@@ -24,7 +24,6 @@ app.add_middleware(
     allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"],
     allow_credentials=True,
     allow_methods=["GET"],
-    allow_methods=["GET", "HEAD"],
     allow_headers=["Content-Type"],
 )
 
@@ -42,7 +41,7 @@ def get_model():
             # Run on CPU for broad compatibility, use "cuda" if available
             # For MVP we default to CPU to ensure it runs everywhere without
             # setup
-            _model = WhisperModel(MODEL_SIZE, device="cpu", compute_type="int8")
+            _model = WhisperModel(MODEL_SIZE, device="cpu", compute_type="int8")  # noqa: E501
             logger.info("Model loaded successfully.")
         except Exception as e:
             logger.error(f"Failed to load model: {e}")
@@ -57,12 +56,13 @@ async def transcribe_buffer(audio_buffer: np.ndarray, websocket: WebSocket):
     if len(audio_buffer) > 0:
         logger.info(f"Transcribing {len(audio_buffer)/16000:.2f}s of audio...")
         model = get_model()
+
         segments, info = model.transcribe(audio_buffer, beam_size=5)
 
-        full_text = " ".join([segment.text for segment in segments]).strip()
-        shavian_text, english_with_ipa = converter.convert_sentence_with_ipa(
-            full_text
-        )  # noqa: E501
+        full_text = " ".join([segment.text.strip() for segment in segments if segment.text.strip()])
+        if not full_text:
+            return
+        shavian_text, english_with_ipa = converter.convert_sentence_with_ipa(full_text)  # noqa: E501
 
         # Only send if there is actual text
         if full_text:

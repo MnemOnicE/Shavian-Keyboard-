@@ -24,7 +24,6 @@ app.add_middleware(
     allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"],
     allow_credentials=True,
     allow_methods=["GET"],
-
     allow_headers=["Content-Type"],
 )
 
@@ -45,7 +44,7 @@ def get_model():
             _model = WhisperModel(MODEL_SIZE, device="cpu", compute_type="int8")  # noqa: E501
             logger.info("Model loaded successfully.")
         except Exception as e:
-            logger.error(f"Failed to load model: {e}")
+            logger.error(f"Failed to load model due to an internal error: {type(e).__name__}")
             sys.exit(1)
     return _model
 
@@ -166,8 +165,8 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         logger.info("WebSocket disconnected")
     except Exception as e:
-        logger.error(f"Error: {e}")
-        await websocket.close()
+        logger.error(f"Internal server error occurred in WebSocket endpoint: {type(e).__name__}")
+        await websocket.close(code=1011)
 
 
 # Mount frontend

@@ -1,5 +1,5 @@
 import eng_to_ipa as ipa
 
-words = ["hello", "world", "this", "is", "a", "test", "shavian", "phonetic", "alphabet"]
+words = ["hello", "world", "this", "is", "a", "test", "shavian", "phonetic", "alphabet"]  # noqa: E501
 for word in words:
     print(f"{word}: {ipa.convert(word)}")

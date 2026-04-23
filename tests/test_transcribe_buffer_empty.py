@@ -16,6 +16,7 @@ sys.modules["fastapi.middleware.cors"] = MagicMock()
 sys.modules["fastapi.staticfiles"] = MagicMock()
 sys.modules["faster_whisper"] = MagicMock()
 sys.modules["backend.vad"] = MagicMock()
+sys.modules["eng_to_ipa"] = MagicMock()
 
 from backend.main import transcribe_buffer
 

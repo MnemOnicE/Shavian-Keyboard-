@@ -2,14 +2,12 @@ import json
 import logging
 import os
 import sys
-from typing import Literal, Optional
 
 import numpy as np
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from faster_whisper import WhisperModel
-from pydantic import BaseModel, Field, ValidationError
 
 # Adjust path to import local lib
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -20,12 +18,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("AutoShavian")
 
 app = FastAPI()
-
-
-class WSMessage(BaseModel, extra="forbid"):
-    action: Literal["transcribe", "flush", "clear", "translate_text"]
-    text: Optional[str] = Field(None, description="Text for translation")
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -73,12 +65,13 @@ async def transcribe_buffer(audio_buffer: np.ndarray, websocket: WebSocket):
         shavian_text, english_with_ipa = converter.convert_sentence_with_ipa(full_text)  # noqa: E501
 
         # Only send if there is actual text
-        response = {
-            "text": full_text,
-            "shavian": shavian_text,
-            "english_with_ipa": english_with_ipa,
-        }
-        await websocket.send_json(response)
+        if full_text:
+            response = {
+                "text": full_text,
+                "shavian": shavian_text,
+                "english_with_ipa": english_with_ipa,
+            }
+            await websocket.send_json(response)
 
 
 @app.websocket("/ws/transcribe")
@@ -144,24 +137,19 @@ async def websocket_endpoint(websocket: WebSocket):
                         await transcribe_buffer(segment, websocket)
 
             if "text" in data:
-                try:
-                    msg = WSMessage.model_validate_json(data["text"])
-                except ValidationError as e:
-                    logger.warning(f"Invalid WebSocket message received: {e}")
-                    continue
-
-                if msg.action in ("transcribe", "flush"):
+                msg = json.loads(data["text"])
+                if msg.get("action") in ("transcribe", "flush"):
                     # Force flush and transcribe
                     segments = vad_manager.flush()
                     for segment in segments:
                         await transcribe_buffer(segment, websocket)
 
-                elif msg.action == "clear":
+                elif msg.get("action") == "clear":
                     # Flush and discard
                     vad_manager.flush()
 
-                elif msg.action == "translate_text":
-                    text = msg.text
+                elif msg.get("action") == "translate_text":
+                    text = msg.get("text", "")
                     if text:
                         shavian_text, english_with_ipa = (
                             converter.convert_sentence_with_ipa(text)

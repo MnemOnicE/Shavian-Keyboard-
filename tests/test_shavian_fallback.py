@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 # Add src to path
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
-from lib.shavian import ShavianConverter, _cached_ipa_convert  # noqa: E402
+from lib.shavian import ShavianConverter  # noqa: E402
 
 
 class TestShavianFallback(unittest.TestCase):
@@ -16,9 +16,6 @@ class TestShavianFallback(unittest.TestCase):
         with open(self.log_file, "w") as f:  # noqa: F841
             pass
         self.converter = ShavianConverter(fallback_threshold=0.5)
-        # Clear caches to ensure mock works
-        _cached_ipa_convert.cache_clear()
-        self.converter._convert_word_cached.cache_clear()
 
     def tearDown(self):
         # Clean up log file? Maybe keep it for inspection
@@ -72,8 +69,6 @@ class TestShavianFallback(unittest.TestCase):
     def test_custom_threshold(self, mock_convert):
         # Set strict threshold 10%
         converter = ShavianConverter(fallback_threshold=0.1)
-        # Clear cache for this instance's method
-        converter._convert_word_cached.cache_clear()
 
         # 'test' -> 't?st' (25% > 10%)
         mock_convert.return_value = "t?st"

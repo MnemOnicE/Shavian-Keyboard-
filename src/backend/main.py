@@ -22,7 +22,7 @@ logger = logging.getLogger("AutoShavian")
 app = FastAPI()
 
 
-class WSMessage(BaseModel):
+class WSMessage(BaseModel, extra="forbid"):
     action: Literal["transcribe", "flush", "clear", "translate_text"]
     text: Optional[str] = Field(None, description="Text for translation")
 

@@ -147,7 +147,7 @@ async def websocket_endpoint(websocket: WebSocket):
             if "text" in data:
                 try:
                     msg = WSMessage.model_validate_json(data["text"])
-                except (ValidationError, json.JSONDecodeError) as e:
+                except ValidationError as e:
                     logger.warning(f"Invalid WebSocket message received: {e}")
                     continue
 

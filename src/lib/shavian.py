@@ -1,7 +1,14 @@
 import logging
 import re
+from functools import lru_cache
 
 import eng_to_ipa as ipa
+
+
+@lru_cache(maxsize=2048)
+def _cached_ipa_convert(text):
+    return ipa.convert(text)
+
 
 # Configure logging for ShavianConverter
 logger = logging.getLogger("ShavianConverter")
@@ -31,104 +38,110 @@ class ShavianConverter:
     # check if part matches our word definition
     _WORD_MATCH_PATTERN = re.compile(r"^[a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*$")
 
+    # Mapping based on standard IPA to Shavian correspondence
+    ipa_map = {
+        # Consonants
+        "p": "𐑐",
+        "b": "𐑚",
+        "t": "𐑑",
+        "d": "𐑛",
+        "k": "𐑒",
+        "g": "𐑜",
+        "f": "𐑓",
+        "v": "𐑝",
+        "θ": "𐑔",
+        "ð": "𐑞",
+        "s": "𐑕",
+        "z": "𐑟",
+        "ʃ": "𐑖",
+        "ʒ": "𐑠",
+        "ʧ": "𐑗",
+        "tʃ": "𐑗",
+        "ʤ": "𐑡",
+        "dʒ": "𐑡",
+        "j": "𐑘",
+        "w": "𐑢",
+        "ŋ": "𐑙",
+        "h": "𐑣",
+        # Liquids / Nasals
+        "l": "𐑤",
+        "r": "𐑮",
+        "m": "𐑥",
+        "n": "𐑯",
+        # Vowels (Short)
+        "ɪ": "𐑦",
+        # approximate:
+        "i": "𐑦",
+        "ɛ": "𐑧",
+        "e": "𐑧",
+        "æ": "𐑨",
+        "ə": "𐑩",
+        "ʌ": "𐑳",
+        "ɒ": "𐑪",
+        "ʊ": "𐑫",
+        # Vowels (Long/Diphthongs)
+        "iː": "𐑰",
+        "eɪ": "𐑱",
+        "aɪ": "𐑲",
+        "ɔɪ": "𐑶",
+        "juː": "𐑿",
+        "ju": "𐑿",
+        "oʊ": "𐑴",
+        "əʊ": "𐑴",
+        "aʊ": "𐑬",
+        "uː": "𐑵",
+        "u": "𐑵",
+        "ɔː": "𐑷",
+        "ɔ": "𐑷",
+        "ɑː": "𐑭",
+        "ɑ": "𐑭",
+        # R-colored vowels (approximations)
+        "ɑːr": "𐑸",
+        "ɑr": "𐑸",
+        "ar": "𐑸",
+        "ɔːr": "𐑹",
+        "ɔr": "𐑹",
+        "or": "𐑹",
+        "ɛər": "𐑺",
+        "ɛr": "𐑺",
+        "er": "𐑺",  # air / err distinction is
+        "ɜːr": "𐑻",
+        "ɜr": "𐑻",
+        "ɝ": "𐑻",
+        "ər": "𐑼",
+        "ɚ": "𐑼",
+        "ɪər": "𐑽",
+        "ɪr": "𐑽",
+        "jʊər": "𐑿",  # cure - close enough to yew?
+    }
+
+    # Common word overrides (ReadLex standard)
+    word_map = {
+        "the": "𐑞",
+        "of": "𐑝",
+        "and": "𐑯",
+        "to": "𐑑",
+        "for": "𐑓",
+        "a": "𐑩",
+    }
+
     def __init__(self, fallback_threshold=0.5):
         self.fallback_threshold = fallback_threshold
-        # Mapping based on standard IPA to Shavian correspondence
-        self.ipa_map = {
-            # Consonants
-            "p": "𐑐",
-            "b": "𐑚",
-            "t": "𐑑",
-            "d": "𐑛",
-            "k": "𐑒",
-            "g": "𐑜",
-            "f": "𐑓",
-            "v": "𐑝",
-            "θ": "𐑔",
-            "ð": "𐑞",
-            "s": "𐑕",
-            "z": "𐑟",
-            "ʃ": "𐑖",
-            "ʒ": "𐑠",
-            "ʧ": "𐑗",
-            "tʃ": "𐑗",
-            "ʤ": "𐑡",
-            "dʒ": "𐑡",
-            "j": "𐑘",
-            "w": "𐑢",
-            "ŋ": "𐑙",
-            "h": "𐑣",
-            # Liquids / Nasals
-            "l": "𐑤",
-            "r": "𐑮",
-            "m": "𐑥",
-            "n": "𐑯",
-            # Vowels (Short)
-            "ɪ": "𐑦",
-            # approximate:
-            "i": "𐑦",
-            "ɛ": "𐑧",
-            "e": "𐑧",
-            "æ": "𐑨",
-            "ə": "𐑩",
-            "ʌ": "𐑳",
-            "ɒ": "𐑪",
-            "ʊ": "𐑫",
-            # Vowels (Long/Diphthongs)
-            "iː": "𐑰",
-            "eɪ": "𐑱",
-            "aɪ": "𐑲",
-            "ɔɪ": "𐑶",
-            "juː": "𐑿",
-            "ju": "𐑿",
-            "oʊ": "𐑴",
-            "əʊ": "𐑴",
-            "aʊ": "𐑬",
-            "uː": "𐑵",
-            "u": "𐑵",
-            "ɔː": "𐑷",
-            "ɔ": "𐑷",
-            "ɑː": "𐑭",
-            "ɑ": "𐑭",
-            # R-colored vowels (approximations)
-            "ɑːr": "𐑸",
-            "ɑr": "𐑸",
-            "ar": "𐑸",
-            "ɔːr": "𐑹",
-            "ɔr": "𐑹",
-            "or": "𐑹",
-            "ɛər": "𐑺",
-            "ɛr": "𐑺",
-            "er": "𐑺",  # air / err distinction is
-            "ɜːr": "𐑻",
-            "ɜr": "𐑻",
-            "ɝ": "𐑻",
-            "ər": "𐑼",
-            "ɚ": "𐑼",
-            "ɪər": "𐑽",
-            "ɪr": "𐑽",
-            "jʊər": "𐑿",  # cure - close enough to yew?
-            # Common words (Single letters)
-            # These are handled by whole-word lookup if possible, but IPA
-            # mapping helps too
-        }
-
-        # Common word overrides (ReadLex standard)
-        self.word_map = {
-            "the": "𐑞",
-            "of": "𐑝",
-            "and": "𐑯",
-            "to": "𐑑",
-            "for": "𐑓",
-            "a": "𐑩",
-        }
+        # Per-instance cache for word conversion to avoid memory leak
+        # with @lru_cache on instance methods.
+        self._convert_word_cached = lru_cache(maxsize=1024)(self._convert_word_impl)
 
     def convert_word(self, word):
+        """Wrapper for cached word conversion."""
+        return self._convert_word_cached(word, self.fallback_threshold)
+
+    def _convert_word_impl(self, word, threshold):
+        """Internal conversion logic."""
         word_lower = word.lower()
         if word_lower in self.word_map:
             return self.word_map[word_lower]
 
-        ipa_text = ipa.convert(word_lower)
+        ipa_text = _cached_ipa_convert(word_lower)
 
         if "*" in ipa_text:
             return word  # Fallback if unknown
@@ -145,7 +158,7 @@ class ShavianConverter:
             match = None
             for length in [3, 2, 1]:
                 if i + length <= len(ipa_text):
-                    sub = ipa_text[i: i + length]
+                    sub = ipa_text[i : i + length]
                     if sub in self.ipa_map:
                         match = self.ipa_map[sub]
                         shavian_chars.append(match)
@@ -164,11 +177,6 @@ class ShavianConverter:
                 shavian_chars.append(char)
                 i += 1
 
-            # We count 'total chars' as the number of 'units' processed
-            # from IPA.
-            # If we matched 3 IPA chars to 1 Shavian, is that 1 unit or 3?
-            # Usually fallback ratio should be based on input length or
-            # output validity.
         total_ipa_chars = len(ipa_text)
 
         if total_ipa_chars > 0:
@@ -202,7 +210,7 @@ class ShavianConverter:
         return "".join(converted)
 
     def convert_sentence_with_ipa(self, text):
-        parts = re.split(r"([a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*)", text)
+        parts = self._WORD_SPLIT_PATTERN.split(text)
         converted_shavian = []
         converted_ipa_parts = []
 
@@ -212,7 +220,7 @@ class ShavianConverter:
             # When using re.split with a capturing group, words are at odd indices  # noqa: E501
             if i % 2 == 1:
                 # We need the IPA text for this part
-                ipa_text = ipa.convert(part.lower())
+                ipa_text = _cached_ipa_convert(part.lower())
                 # if there is fallback etc, standard eng_to_ipa returns with *
                 converted_ipa_parts.append(f"{part} [/{ipa_text}/]")
                 converted_shavian.append(self.convert_word(part))

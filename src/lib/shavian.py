@@ -133,9 +133,9 @@ class ShavianConverter:
 
     def convert_word(self, word):
         """Wrapper for cached word conversion."""
-        return self._convert_word_cached(word)
+        return self._convert_word_cached(word, self.fallback_threshold)
 
-    def _convert_word_impl(self, word):
+    def _convert_word_impl(self, word, threshold):
         """Internal conversion logic."""
         word_lower = word.lower()
         if word_lower in self.word_map:
